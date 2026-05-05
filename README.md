@@ -119,58 +119,157 @@ All settings are read from `.env`. **Never commit `.env`** — it is gitignored.
 
 ## Running Tests
 
-### Full sanity suite (default)
+Parallelism is controlled by the `PYTEST_WORKERS` environment variable or the `-n` flag.
+Neither is hardcoded — you choose the right value for your machine.
 
-```bash
-pytest
+---
+
+### Sanity suite (recommended — skips slow upload test)
+
+**Windows PowerShell**
+```powershell
+$env:PYTEST_WORKERS=4; pytest -m "sanity and not slow"
 ```
 
-`pytest.ini` already passes `-n 2 --dist loadfile` so two browser workers run in parallel.
+**Windows CMD**
+```cmd
+set PYTEST_WORKERS=4 && pytest -m "sanity and not slow"
+```
+
+**macOS / Linux / Git Bash**
+```bash
+PYTEST_WORKERS=4 pytest -m "sanity and not slow"
+```
+
+**Via Makefile (macOS / Linux / Git Bash)**
+```bash
+make sanity             # 4 workers, chromium, headless
+make sanity WORKERS=2   # 2 workers
+```
+
+---
+
+### Full sanity suite (includes slow upload-polling test)
+
+```powershell
+# Windows PowerShell
+$env:PYTEST_WORKERS=4; pytest -m sanity
+```
+```bash
+# macOS / Linux
+PYTEST_WORKERS=4 pytest -m sanity
+```
+
+> **Note:** The upload test polls the server for up to 120 s. Run it separately
+> when you specifically need to verify template upload behaviour:
+> ```bash
+> pytest -m slow -n 2 --dist loadfile
+> ```
+
+---
 
 ### Single test file
 
-```bash
+```powershell
+# Windows PowerShell
 pytest tests/test_letter_type.py -v
 ```
+```bash
+# macOS / Linux
+pytest tests/test_letter_type.py -v
+```
+
+With parallelism:
+```powershell
+$env:PYTEST_WORKERS=2; pytest tests/test_letter_type.py
+```
+
+---
 
 ### Single test case
 
 ```bash
 pytest tests/test_letter_type.py::TestLetterTypeConfiguration::test_configure_letter_type_upload -v
+pytest tests/test_sanity.py::TestAuthentication::test_login_with_valid_credentials -v
+pytest tests/test_navigation.py::TestNavigation::test_all_nav_pages_load -v
+pytest tests/test_dashboard.py::TestDashboard::test_stat_cards_match_api_status_summary -v
 ```
 
-### Single-threaded (no parallelism — best for debugging)
-
-```bash
-pytest -p no:xdist -v
-```
+---
 
 ### By marker
 
 ```bash
-pytest -m sanity       # all smoke tests
-pytest -m regression   # full regression suite
-pytest -m "not slow"   # skip long-running tests
+pytest -m sanity                  # all smoke tests (includes slow)
+pytest -m "sanity and not slow"   # fast smoke tests only (recommended for CI / quick checks)
+pytest -m slow                    # upload-polling tests only
+pytest -m regression              # full regression suite
 ```
 
-### Headed browser (watch the browser while tests run)
+---
 
-Set `HEADLESS=false` in `.env`, then:
+### No parallelism — best for debugging
 
 ```bash
 pytest -p no:xdist -v
 ```
 
-Or override inline on **Windows PowerShell**:
+---
 
+### Headed browser (watch the browser while tests run)
+
+**Windows PowerShell**
 ```powershell
-$env:HEADLESS="false"; pytest -p no:xdist -v
+$env:HEADLESS="false"; pytest -m "sanity and not slow" -p no:xdist -v
 ```
+
+**macOS / Linux**
+```bash
+HEADLESS=false pytest -m "sanity and not slow" -p no:xdist -v
+```
+
+**Via Makefile**
+```bash
+make headed
+```
+
+---
+
+### Different browser
+
+**Windows PowerShell**
+```powershell
+$env:PYTEST_WORKERS=4; pytest -m "sanity and not slow" --browser-override firefox
+$env:PYTEST_WORKERS=4; pytest -m "sanity and not slow" --browser-override webkit
+```
+
+**macOS / Linux**
+```bash
+PYTEST_WORKERS=4 pytest -m "sanity and not slow" --browser-override firefox
+```
+
+**Via Makefile**
+```bash
+make sanity BROWSER=firefox
+```
+
+---
 
 ### Slow-motion + headed (step-by-step debugging)
 
+**Windows PowerShell**
+```powershell
+$env:HEADLESS="false"; $env:SLOW_MO="500"; pytest tests/test_navigation.py -p no:xdist -v -s
+```
+
+**macOS / Linux**
 ```bash
-SLOW_MO=500 HEADLESS=false pytest tests/test_navigation.py -p no:xdist -v
+HEADLESS=false SLOW_MO=500 pytest tests/test_navigation.py -p no:xdist -v -s
+```
+
+**Via Makefile**
+```bash
+make debug
 ```
 
 ---
