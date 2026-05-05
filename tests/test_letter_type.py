@@ -82,8 +82,9 @@ class TestLetterTypeConfiguration:
         "Click the 'Configure Letter Type' button, upload a .docx template, "
         "and verify that the status of the new entry first shows 'Processing' "
         "and then transitions to 'Draft' within a reasonable wait period.\n\n"
-        "The status polling reloads the page every 2 s for up to 60 s."
+        "The status polling reloads the page every 2 s for up to 120 s."
     )
+    @pytest.mark.slow
     def test_configure_letter_type_upload(
         self, letter_type_page: LetterTypePage, template_file: str
     ):

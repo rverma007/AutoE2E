@@ -14,5 +14,8 @@ playwright>=1.44.0
 # Config / env
 python-dotenv>=1.0.1
 
+# HTTP client — used by the API client layer for test data setup/teardown
+requests>=2.31.0
+
 # Optional — richer reporting
 allure-pytest>=2.13.5

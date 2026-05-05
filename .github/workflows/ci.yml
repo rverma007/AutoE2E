@@ -1,0 +1,173 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  # Allow manual triggering with optional overrides
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Test environment label (sprint / staging / prod)"
+        required: false
+        default: "sprint"
+      browser:
+        description: "Browser (chromium / firefox / webkit)"
+        required: false
+        default: "chromium"
+      workers:
+        description: "Parallel workers (default: 4)"
+        required: false
+        default: "4"
+
+# Cancel in-progress runs on the same branch when a new commit is pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── 1. Sanity suite ─────────────────────────────────────────────────────────
+  sanity:
+    name: Sanity Suite (${{ github.event.inputs.browser || 'chromium' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      BASE_URL:               ${{ secrets.BASE_URL }}
+      APP_USERNAME:           ${{ secrets.APP_USERNAME }}
+      APP_PASSWORD:           ${{ secrets.APP_PASSWORD }}
+      HEADLESS:               "true"
+      BROWSER:                ${{ github.event.inputs.browser || 'chromium' }}
+      ENVIRONMENT:            ${{ github.event.inputs.environment || 'sprint' }}
+      PYTEST_WORKERS:         ${{ github.event.inputs.workers || '4' }}
+      RECORD_TRACE:           "true"
+      SCREENSHOT_ON_FAILURE:  "true"
+      RECORD_VIDEO:           "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browser
+        run: playwright install ${{ github.event.inputs.browser || 'chromium' }} --with-deps
+
+      # Run fast sanity tests only; slow (upload-polling) tests run separately
+      - name: Run sanity suite
+        run: pytest -m "sanity and not slow" -n $PYTEST_WORKERS --dist loadfile
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sanity-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            reports/
+            screenshots/
+            traces/
+          retention-days: 7
+
+  # ── 2. Slow tests (upload polling) ──────────────────────────────────────────
+  # Only runs on pushes to master, not on every PR, to avoid long waits.
+  slow:
+    name: Slow Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    needs: sanity
+
+    env:
+      BASE_URL:               ${{ secrets.BASE_URL }}
+      APP_USERNAME:           ${{ secrets.APP_USERNAME }}
+      APP_PASSWORD:           ${{ secrets.APP_PASSWORD }}
+      HEADLESS:               "true"
+      BROWSER:                "chromium"
+      PYTEST_WORKERS:         "2"
+      RECORD_TRACE:           "true"
+      SCREENSHOT_ON_FAILURE:  "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: playwright install chromium --with-deps
+
+      - name: Run slow tests
+        run: pytest -m slow -n $PYTEST_WORKERS --dist loadfile
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slow-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            reports/
+            screenshots/
+            traces/
+          retention-days: 7
+
+  # ── 3. Cross-browser matrix (manual trigger only) ───────────────────────────
+  cross-browser:
+    name: Cross-browser (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'workflow_dispatch'
+    needs: sanity
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [firefox, webkit]
+
+    env:
+      BASE_URL:               ${{ secrets.BASE_URL }}
+      APP_USERNAME:           ${{ secrets.APP_USERNAME }}
+      APP_PASSWORD:           ${{ secrets.APP_PASSWORD }}
+      HEADLESS:               "true"
+      BROWSER:                ${{ matrix.browser }}
+      PYTEST_WORKERS:         "2"
+      RECORD_TRACE:           "true"
+      SCREENSHOT_ON_FAILURE:  "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: playwright install ${{ matrix.browser }} --with-deps
+
+      - name: Run sanity suite on ${{ matrix.browser }}
+        run: pytest -m "sanity and not slow" -n $PYTEST_WORKERS --dist loadfile
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-browser-${{ matrix.browser }}-${{ github.run_id }}
+          path: |
+            reports/
+            screenshots/
+            traces/
+          retention-days: 7
