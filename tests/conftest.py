@@ -35,6 +35,12 @@ from playwright.sync_api import (
 from config.config import Config
 from pages.login_page import LoginPage
 from pages.letter_type_page import LetterTypePage
+from pages.audit_logger_page import AuditLoggerPage
+from pages.component_library_page import ComponentLibraryPage
+from pages.letter_control_center_page import LetterControlCenterPage
+from pages.letter_consolidation_page import LetterConsolidationPage
+from pages.recon_report_page import ReconReportPage
+from pages.settings_page import SettingsPage
 from utils.logger import get_logger
 
 
@@ -223,6 +229,59 @@ def login_page(page: Page) -> LoginPage:
 @pytest.fixture()
 def letter_type_page(authed_page: Page) -> LetterTypePage:
     return LetterTypePage(authed_page)
+
+
+@pytest.fixture()
+def audit_logger_page(authed_page: Page) -> AuditLoggerPage:
+    return AuditLoggerPage(authed_page)
+
+
+@pytest.fixture()
+def component_library_page(authed_page: Page) -> ComponentLibraryPage:
+    return ComponentLibraryPage(authed_page)
+
+
+@pytest.fixture()
+def letter_control_center_page(authed_page: Page) -> LetterControlCenterPage:
+    return LetterControlCenterPage(authed_page)
+
+
+@pytest.fixture()
+def letter_consolidation_page(authed_page: Page) -> LetterConsolidationPage:
+    return LetterConsolidationPage(authed_page)
+
+
+@pytest.fixture()
+def recon_report_page(authed_page: Page) -> ReconReportPage:
+    return ReconReportPage(authed_page)
+
+
+@pytest.fixture()
+def settings_page(authed_page: Page) -> SettingsPage:
+    return SettingsPage(authed_page)
+
+
+@pytest.fixture(scope="session")
+def xml_file(tmp_path_factory) -> str:
+    """Minimal valid XML for letter generation, created once per session."""
+    fixtures_dir = tmp_path_factory.mktemp("fixtures")
+    xml_path = fixtures_dir / "sample_member.xml"
+    xml_path.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        "<MemberData>\n"
+        "  <Member>\n"
+        "    <MemberId>TEST001</MemberId>\n"
+        "    <FirstName>John</FirstName>\n"
+        "    <LastName>Doe</LastName>\n"
+        "    <DateOfBirth>1980-01-15</DateOfBirth>\n"
+        "    <Plan>Gold</Plan>\n"
+        "    <EffectiveDate>2026-01-01</EffectiveDate>\n"
+        "  </Member>\n"
+        "</MemberData>\n",
+        encoding="utf-8",
+    )
+    log.info(f"Sample XML created -> {xml_path}")
+    return str(xml_path)
 
 
 @pytest.fixture(scope="session")
