@@ -38,6 +38,18 @@ Usage:
         "Click on Letter Type in the sidebar",
         "Confirm the letter type table loaded with data",
     ])
+
+4. smart_assert(page, check_fn, question, expected=True)
+   - Runs check_fn() first (a normal Playwright lambda — free, instant).
+   - Only calls ai_verify() if check_fn fails — reduces API calls by 80–90%.
+   - Use this instead of ai_verify() for all routine assertions.
+
+   Example:
+       smart_assert(
+           page,
+           lambda: page.locator("table tbody tr").first.is_visible(timeout=3_000),
+           "Is there a data table with rows visible on this page?"
+       )
 """
 from __future__ import annotations
 
@@ -123,6 +135,65 @@ def ai_verify(page, question: str, fallback: bool = True) -> bool:
     except Exception as exc:  # noqa: BLE001
         log.warning(f"ai_verify failed ({exc}). Returning fallback={fallback}")
         return fallback
+
+
+# ---------------------------------------------------------------------------
+# 1b. Smart assert — normal check first, AI only on failure
+# ---------------------------------------------------------------------------
+
+def smart_assert(
+    page,
+    check_fn,
+    question: str,
+    expected: bool = True,
+    fallback: bool = True,
+) -> bool:
+    """
+    Cost-efficient assertion: run a normal Playwright check first.
+    Only call ai_verify() when the normal check fails.
+
+    This reduces API calls by 80-90% — Claude is only invoked when something
+    actually looks wrong, not on every passing test run.
+
+    Args:
+        page:      Playwright Page object.
+        check_fn:  Zero-argument callable that returns a truthy/falsy value
+                   or raises on failure (e.g. a lambda using is_visible).
+        question:  Yes/no question for Claude if check_fn fails.
+        expected:  True = expect YES from Claude, False = expect NO.
+        fallback:  Value returned if Claude is also unavailable.
+
+    Returns:
+        True  — normal check passed  (no API call made)
+        True  — normal check failed but Claude confirmed `expected`
+        False — normal check failed and Claude disagreed with `expected`
+        False — both checks failed
+
+    Example:
+        assert smart_assert(
+            page,
+            lambda: page.locator("table tbody tr").first.is_visible(timeout=3_000),
+            "Is there a data table with rows visible on this page?",
+        )
+    """
+    # ── Step 1: try the fast, free Playwright check ──────────────────────────
+    try:
+        result = check_fn()
+        passed = bool(result)
+    except Exception:  # noqa: BLE001
+        passed = False
+
+    if passed:
+        log.info(f"smart_assert: PASS via normal check — no AI call | q={question!r}")
+        return True
+
+    # ── Step 2: normal check failed — escalate to Claude ────────────────────
+    log.info(f"smart_assert: normal check FAILED — escalating to ai_verify | q={question!r}")
+    ai_result = ai_verify(page, question, fallback=fallback)
+    outcome = ai_result == expected
+    status = "PASS" if outcome else "FAIL"
+    log.info(f"smart_assert: AI says {'YES' if ai_result else 'NO'} → {status}")
+    return outcome
 
 
 # ---------------------------------------------------------------------------

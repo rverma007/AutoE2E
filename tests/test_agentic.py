@@ -32,7 +32,7 @@ import pytest
 
 from pages.letter_type_page import LetterTypePage
 from pages.login_page import LoginPage
-from utils.ai_agent import AIAgent, ai_find_selector, ai_verify
+from utils.ai_agent import AIAgent, ai_find_selector, ai_verify, smart_assert
 
 pytestmark = pytest.mark.agentic
 
@@ -69,70 +69,88 @@ class TestAIVisualAssertions:
     @allure.title("[AI] Dashboard shows welcome message after login")
     @allure.severity(allure.severity_level.NORMAL)
     def test_ai_dashboard_welcome(self, authed_page):
-        """Claude visually confirms the dashboard rendered after login."""
+        """Normal check first; Claude only called if the greeting element is missing."""
         from pages.nav_page import NavigationPage
         nav = NavigationPage(authed_page)
         nav.navigate()
         authed_page.wait_for_load_state("networkidle", timeout=15_000)
 
-        with allure.step("AI: Verify dashboard welcome message is visible"):
-            result = ai_verify(
+        with allure.step("smart_assert: dashboard welcome message is visible"):
+            result = smart_assert(
                 authed_page,
-                "Is there a welcome message or greeting visible on this dashboard page?"
+                lambda: authed_page.locator(
+                    "text=/Good (morning|afternoon|evening)/i, "
+                    "text=/Welcome/i, "
+                    "[class*='welcome'], [class*='greeting']"
+                ).first.is_visible(timeout=3_000),
+                "Is there a welcome message or greeting visible on this dashboard page?",
             )
             screenshot = authed_page.screenshot()
             allure.attach(screenshot, name="dashboard_screenshot", attachment_type=allure.attachment_type.PNG)
 
         if not ai_available:
             pytest.skip("ANTHROPIC_API_KEY not set — AI assertion skipped")
-        assert result, "AI did not detect a welcome message on the dashboard"
+        assert result, "Dashboard welcome message not detected"
 
     @allure.story("Letter Type listing UI")
     @allure.title("[AI] Letter Type table is visible after navigation")
     @allure.severity(allure.severity_level.CRITICAL)
     def test_ai_letter_type_table_visible(self, authed_letter_type: LetterTypePage):
-        """Claude visually confirms the letter type table rendered correctly."""
-        with allure.step("AI: Verify letter type table is visible"):
-            result = ai_verify(
+        """Normal check first; Claude only called if the table is missing."""
+        with allure.step("smart_assert: letter type table is visible with rows"):
+            result = smart_assert(
                 authed_letter_type.page,
-                "Is there a data table with multiple rows and column headers visible on this page?"
+                lambda: authed_letter_type.page.locator("table tbody tr").first
+                        .is_visible(timeout=5_000),
+                "Is there a data table with multiple rows and column headers visible on this page?",
             )
             screenshot = authed_letter_type.page.screenshot()
             allure.attach(screenshot, name="letter_type_table", attachment_type=allure.attachment_type.PNG)
 
         if not ai_available:
             pytest.skip("ANTHROPIC_API_KEY not set — AI assertion skipped")
-        assert result, "AI did not detect a data table on the Letter Type listing page"
+        assert result, "Letter Type table not detected on the listing page"
 
     @allure.story("Letter Type listing UI")
     @allure.title("[AI] Search box is visible on Letter Type page")
     @allure.severity(allure.severity_level.NORMAL)
     def test_ai_search_box_visible(self, authed_letter_type: LetterTypePage):
-        """Claude visually confirms a search input is present."""
-        with allure.step("AI: Verify search input is visible"):
-            result = ai_verify(
+        """Normal check first; Claude only called if no search input is found."""
+        with allure.step("smart_assert: search box is visible"):
+            result = smart_assert(
                 authed_letter_type.page,
-                "Is there a search input field or search box visible on this page?"
+                lambda: authed_letter_type.page.locator(
+                    "input[type='search'], input[placeholder*='Search' i], "
+                    "input[placeholder*='Letter' i]"
+                ).first.is_visible(timeout=3_000),
+                "Is there a search input field or search box visible on this page?",
             )
 
         if not ai_available:
             pytest.skip("ANTHROPIC_API_KEY not set — AI assertion skipped")
-        assert result, "AI did not detect a search box on the Letter Type listing page"
+        assert result, "Search box not detected on the Letter Type listing page"
 
     @allure.story("Negative check")
     @allure.title("[AI] Error message is NOT shown on the Letter Type page")
     @allure.severity(allure.severity_level.NORMAL)
     def test_ai_no_error_on_letter_type(self, authed_letter_type: LetterTypePage):
-        """Claude confirms there is no error banner or alert on the page."""
-        with allure.step("AI: Verify no error message is visible"):
-            result = ai_verify(
+        """Normal check confirms no error element exists; Claude only called if one is found."""
+        with allure.step("smart_assert: no error banner visible"):
+            # Normal check: if an error element IS visible, that's a failure →
+            # smart_assert with expected=False means we expect Claude to say NO.
+            result = smart_assert(
                 authed_letter_type.page,
-                "Is there an error message, alert banner, or failure notification visible on this page?"
+                lambda: not authed_letter_type.page.locator(
+                    "[role='alert'], .error, .Mui-error, "
+                    "[class*='error'], [class*='alert'], [class*='banner']"
+                ).first.is_visible(timeout=2_000),
+                "Is there an error message, alert banner, or failure notification visible on this page?",
+                expected=False,  # we expect Claude to answer NO (no error)
             )
 
         if not ai_available:
             pytest.skip("ANTHROPIC_API_KEY not set — AI assertion skipped")
-        assert not result, "AI detected an unexpected error on the Letter Type listing page"
+        assert result, "Unexpected error detected on the Letter Type listing page"
 
 
 # ---------------------------------------------------------------------------
