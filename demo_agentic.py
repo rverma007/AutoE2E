@@ -18,7 +18,7 @@ What the demo does
 Prerequisites
 -------------
   pip install -r requirements.txt
-  ANTHROPIC_API_KEY=sk-ant-...  set in your .env file
+  GEMINI_API_KEY=your-key   set in your .env file (free at aistudio.google.com)
 """
 from __future__ import annotations
 
@@ -95,14 +95,14 @@ def check_prerequisites() -> bool:
     print(f"  {BOLD}App URL:{RESET}    {Config.BASE_URL}")
     print(f"  {BOLD}User:{RESET}       {Config.APP_USERNAME}")
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if api_key:
         masked = api_key[:8] + "..." + api_key[-4:]
         print(f"  {BOLD}API Key:{RESET}    {GREEN}{masked} (set){RESET}")
         ai_on = True
     else:
         print(f"  {BOLD}API Key:{RESET}    {RED}NOT SET — AI levels will be skipped{RESET}")
-        print(f"\n  {DIM}Add ANTHROPIC_API_KEY to your .env to enable AI features.{RESET}")
+        print(f"\n  {DIM}Add GEMINI_API_KEY to your .env to enable AI features.{RESET}")
         ai_on = False
 
     print()
@@ -125,7 +125,7 @@ def demo_level_1(page, ai_on: bool) -> None:
     """))
 
     if not ai_on:
-        skip("ANTHROPIC_API_KEY not set")
+        skip("GEMINI_API_KEY not set")
         return
 
     wait_for_key("Ready to run Level 1 — press ENTER")
@@ -192,7 +192,7 @@ def demo_level_2(page, ai_on: bool) -> None:
     """))
 
     if not ai_on:
-        skip("ANTHROPIC_API_KEY not set")
+        skip("GEMINI_API_KEY not set")
         return
 
     wait_for_key("Ready to run Level 2 — press ENTER")
@@ -252,7 +252,7 @@ def demo_level_3(page, ai_on: bool) -> None:
     """))
 
     if not ai_on:
-        skip("ANTHROPIC_API_KEY not set")
+        skip("GEMINI_API_KEY not set")
         return
 
     wait_for_key("Ready to run Level 3 — press ENTER")
@@ -319,7 +319,7 @@ def demo_summary(ai_on: bool) -> None:
 
       Next steps
       ──────────
-      1. Add ANTHROPIC_API_KEY to CI/CD environment
+      1. Add GEMINI_API_KEY to CI/CD environment
       2. Wrap flaky selectors with ai_find_selector() as fallback
       3. Write new test cases in plain English using AIAgent.run_steps()
 

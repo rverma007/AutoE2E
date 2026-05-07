@@ -38,7 +38,7 @@ pytestmark = pytest.mark.agentic
 
 # Skip the whole module gracefully when no API key is configured so the
 # regular sanity suite is never blocked by a missing AI credential.
-ai_available = bool(os.environ.get("ANTHROPIC_API_KEY", "").strip())
+ai_available = bool(os.environ.get("GEMINI_API_KEY", "").strip())
 
 
 # ---------------------------------------------------------------------------
