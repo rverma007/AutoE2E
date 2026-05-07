@@ -410,7 +410,86 @@ function tealBullet(slide, items, x, y, w) {
   ], { x: 0.6, y: 5.1, w: 9.0, h: 0.35, fontSize: 13, fontFace: "Consolas", margin: 0, valign: "middle" });
 }
 
-// ── SLIDE 9: Business Value ───────────────────────────────────────────────────
+// ── SLIDE 9: How to Run + Demo Talking Points ────────────────────────────────
+{
+  const s = pres.addSlide();
+  s.background = { color: C.navy };
+  addSlideHeader(s, "How to Run the Demo", "Practice these commands before the meeting — takes 5 minutes");
+
+  // ── Left column: Run commands ─────────────────────────────────────────────
+  s.addText("SETUP  (run once)", {
+    x: 0.45, y: 1.42, w: 4.4, h: 0.28,
+    fontSize: 10, bold: true, color: C.silver, fontFace: FONT_TITLE, margin: 0
+  });
+  card(s, 0.45, 1.7, 4.4, 1.1, { fill: C.codeBox, border: C.teal });
+  s.addText([
+    { text: "git checkout agentic_autonomize\n", options: { color: C.mint } },
+    { text: "pip install -r requirements.txt", options: { color: C.mint } },
+  ], { x: 0.6, y: 1.78, w: 4.1, h: 0.9, fontSize: 11, fontFace: "Consolas", margin: 0 });
+
+  s.addText("RUN OPTIONS", {
+    x: 0.45, y: 2.9, w: 4.4, h: 0.28,
+    fontSize: 10, bold: true, color: C.silver, fontFace: FONT_TITLE, margin: 0
+  });
+
+  const runOpts = [
+    { label: "Full live demo (recommended)", cmd: "python demo_agentic.py", color: C.mint },
+    { label: "All agentic tests", cmd: "pytest -m agentic -v -s", color: C.teal },
+    { label: "One test at a time", cmd: "pytest tests/test_agentic.py\n  ::TestAIVisualAssertions -v -s", color: C.silver },
+  ];
+  runOpts.forEach((r, i) => {
+    const y = 3.2 + i * 0.72;
+    card(s, 0.45, y, 4.4, 0.65, { fill: C.card, border: r.color, borderWidth: 1 });
+    s.addText(r.label, { x: 0.6, y: y + 0.04, w: 4.1, h: 0.24, fontSize: 10, color: C.silver, fontFace: FONT_BODY, margin: 0 });
+    s.addText(r.cmd, { x: 0.6, y: y + 0.28, w: 4.1, h: 0.3, fontSize: 10.5, bold: true, color: r.color, fontFace: "Consolas", margin: 0 });
+  });
+
+  // ── Right column: What to say ─────────────────────────────────────────────
+  s.addText("WHAT TO SAY  (talking points per log line)", {
+    x: 5.2, y: 1.42, w: 4.6, h: 0.28,
+    fontSize: 10, bold: true, color: C.silver, fontFace: FONT_TITLE, margin: 0
+  });
+
+  const talking = [
+    {
+      log: "PASS via normal check",
+      say: "Normal check passed — zero API cost, instant",
+      logColor: C.mint,
+    },
+    {
+      log: "normal check FAILED — escalating",
+      say: "Selector broke, Claude is now looking at the screenshot",
+      logColor: C.yellow,
+    },
+    {
+      log: "ai_verify → 'YES'",
+      say: "Claude confirmed the element is there — test self-healed",
+      logColor: C.mint,
+    },
+    {
+      log: "Agent step logs",
+      say: "I wrote plain English — Claude decides what to click",
+      logColor: C.teal,
+    },
+  ];
+
+  talking.forEach((t, i) => {
+    const y = 1.7 + i * 0.93;
+    card(s, 5.2, y, 4.6, 0.85, { fill: C.card, border: C.teal, borderWidth: 1 });
+    s.addText("When you see:", { x: 5.35, y: y + 0.05, w: 4.3, h: 0.22, fontSize: 9, color: C.silver, fontFace: FONT_BODY, margin: 0 });
+    s.addText(t.log, { x: 5.35, y: y + 0.24, w: 4.3, h: 0.24, fontSize: 10.5, bold: true, color: t.logColor, fontFace: "Consolas", margin: 0 });
+    s.addText("Say: \"" + t.say + "\"", { x: 5.35, y: y + 0.52, w: 4.3, h: 0.28, fontSize: 10.5, italic: true, color: C.white, fontFace: FONT_BODY, margin: 0 });
+  });
+
+  // Tip bar at bottom
+  card(s, 0.45, 5.07, 9.2, 0.42, { fill: C.codeBox, border: C.yellow, borderWidth: 1.5 });
+  s.addText("★  Tip: demo_agentic.py pauses at each level — press ENTER when ready so you can explain before it runs", {
+    x: 0.6, y: 5.12, w: 9.0, h: 0.32,
+    fontSize: 12, bold: true, color: C.yellow, fontFace: FONT_BODY, margin: 0, valign: "middle"
+  });
+}
+
+// ── SLIDE 10: Business Value ───────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.background = { color: C.navy };
@@ -441,7 +520,7 @@ function tealBullet(slide, items, x, y, w) {
   });
 }
 
-// ── SLIDE 10: Next Steps ──────────────────────────────────────────────────────
+// ── SLIDE 11: Next Steps ──────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.background = { color: C.navy };
@@ -480,7 +559,7 @@ function tealBullet(slide, items, x, y, w) {
 }
 
 // ── Write file ────────────────────────────────────────────────────────────────
-const outPath = path.join(__dirname, "Agentic_Testing_Demo.pptx");
+const outPath = path.join(__dirname, "Agentic_Testing_Demo_v2.pptx");
 pres.writeFile({ fileName: outPath }).then(() => {
   console.log("✔  Created: " + outPath);
 }).catch(err => {
