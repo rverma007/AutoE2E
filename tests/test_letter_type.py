@@ -17,9 +17,10 @@ import allure
 import pytest
 
 from pages.letter_type_page import LetterTypePage
+from utils.ai_agent import smart_assert
 
 
-pytestmark = pytest.mark.sanity
+pytestmark = [pytest.mark.sanity, pytest.mark.agentic]
 
 
 @allure.epic("Correspondence Application")
@@ -42,9 +43,11 @@ class TestLetterTypeList:
             letter_type_page.open_direct()
 
         with allure.step("Assert page is loaded"):
-            assert letter_type_page.is_loaded(), (
-                "Letter Type page did not reach loaded state — search box missing."
-            )
+            assert smart_assert(
+                letter_type_page.page,
+                lambda: letter_type_page.is_loaded(),
+                "Is the Letter Type listing page loaded with a search box and data table visible?",
+            ), "Letter Type page did not reach loaded state — search box missing."
 
         with allure.step("Assert column headers are visible"):
             headers = letter_type_page.header_texts()
@@ -53,7 +56,11 @@ class TestLetterTypeList:
                 name="Column headers",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            assert headers, "No column headers found in the Letter Type table."
+            assert smart_assert(
+                letter_type_page.page,
+                lambda: bool(letter_type_page.header_texts()),
+                "Is there a data table with visible column headers on this page?",
+            ), "No column headers found in the Letter Type table."
 
         with allure.step("Assert records are displayed or footer shows total count"):
             row_count = letter_type_page.row_count()
@@ -89,7 +96,11 @@ class TestLetterTypeConfiguration:
     ):
         with allure.step("Navigate to Letter Type listing"):
             letter_type_page.open_direct()
-            assert letter_type_page.is_loaded(), "Letter Type page did not load."
+            assert smart_assert(
+                letter_type_page.page,
+                lambda: letter_type_page.is_loaded(),
+                "Is the Letter Type listing page loaded with a search box and data table visible?",
+            ), "Letter Type page did not load."
 
         with allure.step("Click 'Configure Letter Type' and upload template"):
             letter_type_page.configure_letter_type(template_file)
@@ -149,7 +160,11 @@ class TestLetterTypeFilter:
     ):
         with allure.step("Navigate to Letter Type listing"):
             letter_type_page.open_direct()
-            assert letter_type_page.is_loaded(), "Letter Type page did not load."
+            assert smart_assert(
+                letter_type_page.page,
+                lambda: letter_type_page.is_loaded(),
+                "Is the Letter Type listing page loaded with a search box and data table visible?",
+            ), "Letter Type page did not load."
 
         with allure.step("Record the unfiltered row count"):
             unfiltered_count = letter_type_page.row_count()
@@ -207,11 +222,17 @@ class TestLetterTypeDownload:
     def test_download_button_triggers_download(self, letter_type_page: LetterTypePage):
         with allure.step("Navigate to Letter Type listing"):
             letter_type_page.open_direct()
-            assert letter_type_page.is_loaded(), "Letter Type page did not load."
+            assert smart_assert(
+                letter_type_page.page,
+                lambda: letter_type_page.is_loaded(),
+                "Is the Letter Type listing page loaded with a search box and data table visible?",
+            ), "Letter Type page did not load."
 
         with allure.step("Assert Download button is visible"):
-            assert letter_type_page.is_visible(
-                letter_type_page.download_button, timeout=10_000
+            assert smart_assert(
+                letter_type_page.page,
+                lambda: letter_type_page.is_visible(letter_type_page.download_button, timeout=10_000),
+                "Is there a Download or Export button visible on this page?",
             ), "Download button not found on the Letter Type listing page."
 
         with allure.step("Click Download and capture the download event"):
@@ -244,6 +265,8 @@ class TestLetterTypeDownload:
                     name="Download note",
                     attachment_type=allure.attachment_type.TEXT,
                 )
-                assert letter_type_page.is_visible(
-                    letter_type_page.download_button, timeout=5_000
+                assert smart_assert(
+                    letter_type_page.page,
+                    lambda: letter_type_page.is_visible(letter_type_page.download_button, timeout=5_000),
+                    "Is the Download button still visible on the Letter Type page?",
                 ), "Download button missing after click — unexpected DOM error."

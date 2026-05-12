@@ -131,8 +131,20 @@ class LetterTypePage(BasePage):
         return True
 
     def open_direct(self) -> "LetterTypePage":
-        """Navigate directly via path (used after login)."""
-        self.navigate()
+        """Navigate to Letter Type via the sidebar (direct URL redirects to /dashboard)."""
+        from pages.nav_page import NavigationPage
+        nav = NavigationPage(self.page)
+        nav.navigate()
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=15_000)
+        except Exception:  # noqa: BLE001
+            pass
+        self.dismiss_ask_auto_popup()
+        nav.go_to_letter_type()
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=15_000)
+        except Exception:  # noqa: BLE001
+            pass
         self.dismiss_ask_auto_popup()
         return self
 

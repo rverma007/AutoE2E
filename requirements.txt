@@ -16,3 +16,7 @@ python-dotenv>=1.0.1
 
 # Optional — richer reporting
 allure-pytest>=2.13.5
+
+# Agentic / AI layer — Gemini vision & self-healing (free tier)
+google-genai>=0.8.0
+Pillow>=10.0.0

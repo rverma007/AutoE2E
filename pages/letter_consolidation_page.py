@@ -25,8 +25,13 @@ class LetterConsolidationPage(BasePage):
     def _representative_badge(self):
         return self.page.locator(
             "text=Representative, "
+            "text=Rep, "
             "[class*='representative'], "
-            "[data-testid='representative']"
+            "[class*='rep-badge'], "
+            "[data-testid='representative'], "
+            "[class*='badge']:has-text('Rep'), "
+            "[class*='tag']:has-text('Rep'), "
+            "[class*='chip']:has-text('Rep')"
         ).first
 
     def is_loaded(self, timeout: int = 15_000) -> bool:
