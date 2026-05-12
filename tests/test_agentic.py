@@ -5,15 +5,15 @@ Demonstrates three levels of agentic capability on top of the existing
 Playwright + page-object framework:
 
   Level 1 — ai_verify()
-    Visual assertions: Claude looks at a screenshot and answers a yes/no
+    Visual assertions: Gemini looks at a screenshot and answers a yes/no
     question.  No selectors needed — the AI understands the UI visually.
 
   Level 2 — ai_find_selector()
-    Self-healing locators: when a selector breaks, Claude inspects the live
+    Self-healing locators: when a selector breaks, Gemini inspects the live
     DOM and returns a working CSS selector automatically.
 
   Level 3 — AIAgent.run_steps()
-    Autonomous execution: plain-English steps are sent to Claude which
+    Autonomous execution: plain-English steps are sent to Gemini which
     decides what browser action to take (click, fill, verify, navigate)
     and executes them without any hand-written selectors.
 
@@ -61,7 +61,7 @@ def authed_letter_type(authed_page):
 @allure.feature("Level 1 — Visual Assertions")
 class TestAIVisualAssertions:
     """
-    Claude looks at screenshots and answers questions about the UI.
+    Gemini looks at screenshots and answers questions about the UI.
     No CSS selectors — the AI understands the page visually.
     """
 
@@ -69,7 +69,7 @@ class TestAIVisualAssertions:
     @allure.title("[AI] Dashboard shows welcome message after login")
     @allure.severity(allure.severity_level.NORMAL)
     def test_ai_dashboard_welcome(self, authed_page):
-        """Normal check first; Claude only called if the greeting element is missing."""
+        """Normal check first; Gemini only called if the greeting element is missing."""
         from pages.nav_page import NavigationPage
         nav = NavigationPage(authed_page)
         nav.navigate()
@@ -88,15 +88,13 @@ class TestAIVisualAssertions:
             screenshot = authed_page.screenshot()
             allure.attach(screenshot, name="dashboard_screenshot", attachment_type=allure.attachment_type.PNG)
 
-        if not ai_available:
-            pytest.skip("ANTHROPIC_API_KEY not set — AI assertion skipped")
         assert result, "Dashboard welcome message not detected"
 
     @allure.story("Letter Type listing UI")
     @allure.title("[AI] Letter Type table is visible after navigation")
     @allure.severity(allure.severity_level.CRITICAL)
     def test_ai_letter_type_table_visible(self, authed_letter_type: LetterTypePage):
-        """Normal check first; Claude only called if the table is missing."""
+        """Normal check first; Gemini only called if the table is missing."""
         with allure.step("smart_assert: letter type table is visible with rows"):
             result = smart_assert(
                 authed_letter_type.page,
@@ -107,15 +105,13 @@ class TestAIVisualAssertions:
             screenshot = authed_letter_type.page.screenshot()
             allure.attach(screenshot, name="letter_type_table", attachment_type=allure.attachment_type.PNG)
 
-        if not ai_available:
-            pytest.skip("ANTHROPIC_API_KEY not set — AI assertion skipped")
         assert result, "Letter Type table not detected on the listing page"
 
     @allure.story("Letter Type listing UI")
     @allure.title("[AI] Search box is visible on Letter Type page")
     @allure.severity(allure.severity_level.NORMAL)
     def test_ai_search_box_visible(self, authed_letter_type: LetterTypePage):
-        """Normal check first; Claude only called if no search input is found."""
+        """Normal check first; Gemini only called if no search input is found."""
         with allure.step("smart_assert: search box is visible"):
             result = smart_assert(
                 authed_letter_type.page,
@@ -126,18 +122,16 @@ class TestAIVisualAssertions:
                 "Is there a search input field or search box visible on this page?",
             )
 
-        if not ai_available:
-            pytest.skip("ANTHROPIC_API_KEY not set — AI assertion skipped")
         assert result, "Search box not detected on the Letter Type listing page"
 
     @allure.story("Negative check")
     @allure.title("[AI] Error message is NOT shown on the Letter Type page")
     @allure.severity(allure.severity_level.NORMAL)
     def test_ai_no_error_on_letter_type(self, authed_letter_type: LetterTypePage):
-        """Normal check confirms no error element exists; Claude only called if one is found."""
+        """Normal check confirms no error element exists; Gemini only called if one is found."""
         with allure.step("smart_assert: no error banner visible"):
             # Normal check: if an error element IS visible, that's a failure →
-            # smart_assert with expected=False means we expect Claude to say NO.
+            # smart_assert with expected=False means we expect Gemini to say NO.
             result = smart_assert(
                 authed_letter_type.page,
                 lambda: not authed_letter_type.page.locator(
@@ -145,11 +139,9 @@ class TestAIVisualAssertions:
                     "[class*='error'], [class*='alert'], [class*='banner']"
                 ).first.is_visible(timeout=2_000),
                 "Is there an error message, alert banner, or failure notification visible on this page?",
-                expected=False,  # we expect Claude to answer NO (no error)
+                expected=False,  # we expect Gemini to answer NO (no error)
             )
 
-        if not ai_available:
-            pytest.skip("ANTHROPIC_API_KEY not set — AI assertion skipped")
         assert result, "Unexpected error detected on the Letter Type listing page"
 
 
@@ -162,7 +154,7 @@ class TestAIVisualAssertions:
 class TestAISelfHealingSelectors:
     """
     When a hardcoded selector breaks (placeholder text changed, class renamed),
-    Claude inspects the live DOM and returns a working selector automatically.
+    Gemini inspects the live DOM and returns a working selector automatically.
     """
 
     @allure.story("Self-healing search box")
@@ -170,11 +162,9 @@ class TestAISelfHealingSelectors:
     @allure.severity(allure.severity_level.CRITICAL)
     def test_ai_find_search_selector(self, authed_letter_type: LetterTypePage):
         """
-        Demonstrate self-healing: ask Claude to find the search box selector
+        Demonstrate self-healing: ask Gemini to find the search box selector
         from the live DOM regardless of placeholder text or class names.
         """
-        if not ai_available:
-            pytest.skip("ANTHROPIC_API_KEY not set")
 
         with allure.step("AI: Find selector for the search input"):
             selector = ai_find_selector(
@@ -199,9 +189,7 @@ class TestAISelfHealingSelectors:
     @allure.title("[AI] Self-heal: find Letter Type sidebar link selector")
     @allure.severity(allure.severity_level.NORMAL)
     def test_ai_find_nav_link_selector(self, authed_page):
-        """Claude finds the Letter Type sidebar nav link from the live DOM."""
-        if not ai_available:
-            pytest.skip("ANTHROPIC_API_KEY not set")
+        """Gemini finds the Letter Type sidebar nav link from the live DOM."""
 
         from pages.nav_page import NavigationPage
         NavigationPage(authed_page).navigate()
@@ -242,8 +230,6 @@ class TestAIAutonomousAgent:
         The agent autonomously navigates from the dashboard to the
         Letter Type listing using only plain-English instructions.
         """
-        if not ai_available:
-            pytest.skip("ANTHROPIC_API_KEY not set")
 
         from pages.nav_page import NavigationPage
         NavigationPage(authed_page).navigate()
@@ -284,8 +270,6 @@ class TestAIAutonomousAgent:
         The agent autonomously types in the search box and verifies results
         are filtered — all from a plain-English description.
         """
-        if not ai_available:
-            pytest.skip("ANTHROPIC_API_KEY not set")
 
         agent = AIAgent(authed_letter_type.page)
 

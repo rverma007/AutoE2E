@@ -106,12 +106,17 @@ class LetterTypeDetailsPage(BasePage):
             return True
         return False
 
-    def upload_xml_and_generate(self, xml_path: str) -> None:
-        self.xml_upload_input.set_input_files(xml_path)
+    def upload_xml_and_generate(self, xml_path: str) -> bool:
+        try:
+            self.xml_upload_input.set_input_files(xml_path, timeout=10_000)
+        except Exception as exc:  # noqa: BLE001
+            self.log.warning(f"XML file input not available (custom picker): {exc}")
+            return False
         self.wait_for_idle()
         if self.is_visible(self.generate_confirm_button, timeout=8_000):
             self.safe_click(self.generate_confirm_button, "Generate confirm")
         self.wait_for_idle()
+        return True
 
     def is_validation_summary_visible(self, timeout: int = 10_000) -> bool:
         return self.is_visible(self.validation_summary_tab, timeout=timeout)

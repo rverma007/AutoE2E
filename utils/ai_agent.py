@@ -1,7 +1,7 @@
 """
 AI Agent utilities for agentic E2E testing.
 
-Powered by Google Gemini (free tier — gemini-1.5-flash).
+Powered by Google Gemini (free tier — gemini-2.5-flash-lite).
 Get a free API key at: https://aistudio.google.com/app/apikey
 
 Provides four capabilities on top of the existing Playwright framework:
@@ -10,9 +10,12 @@ Provides four capabilities on top of the existing Playwright framework:
    - Takes a screenshot, sends it to Gemini with a yes/no question.
    - Returns True/False — use it as a smart assertion that "understands" the UI.
 
-2. smart_assert(page, check_fn, question, expected=True)
+2. smart_assert(page, check_fn, question, expected=True, recovery_steps=None)
    - Runs check_fn() first (a normal Playwright lambda — free, instant).
    - Only calls ai_verify() if check_fn fails — reduces API calls by 80–90%.
+   - If Gemini also says NO and recovery_steps are provided, the AIAgent
+     executes those steps autonomously and retries — making the test truly
+     self-healing, not just self-reporting.
    - Use this instead of ai_verify() for all routine assertions.
 
 3. ai_find_selector(page, description)
@@ -37,7 +40,7 @@ from utils.logger import get_logger
 
 log = get_logger("ai_agent")
 
-MODEL = "gemini-2.0-flash"   # free tier, supports vision
+MODEL = "gemini-2.5-flash-lite"   # free tier, supports vision
 _UNAVAILABLE_MSG = (
     "GEMINI_API_KEY not set — AI agent features disabled. "
     "Get a free key at https://aistudio.google.com/app/apikey "
@@ -124,6 +127,7 @@ def smart_assert(
     question: str,
     expected: bool = True,
     fallback: bool = True,
+    recovery_steps: "list[str] | None" = None,
 ) -> bool:
     """
     Cost-efficient assertion: run a normal Playwright check first.
@@ -132,18 +136,28 @@ def smart_assert(
     This reduces API calls by 80-90% — Gemini is only invoked when something
     actually looks wrong, not on every passing test run.
 
+    If recovery_steps are provided and Gemini confirms failure, AIAgent will
+    autonomously attempt those steps to recover the UI state, then retry the
+    check — making the test truly self-healing.
+
     Args:
-        page:      Playwright Page object.
-        check_fn:  Zero-argument callable that returns truthy/falsy or raises.
-        question:  Yes/no question for Gemini if check_fn fails.
-        expected:  True = expect YES from Gemini, False = expect NO.
-        fallback:  Value returned if Gemini is also unavailable.
+        page:            Playwright Page object.
+        check_fn:        Zero-argument callable that returns truthy/falsy or raises.
+        question:        Yes/no question for Gemini if check_fn fails.
+        expected:        True = expect YES from Gemini, False = expect NO.
+        fallback:        Value returned if Gemini is also unavailable.
+        recovery_steps:  Optional list of plain-English steps for AIAgent to
+                         execute when the assertion fails, before a final retry.
 
     Example:
         assert smart_assert(
             page,
             lambda: page.locator("table tbody tr").first.is_visible(timeout=3_000),
             "Is there a data table with rows visible on this page?",
+            recovery_steps=[
+                "Scroll down the page to look for the data table",
+                "If a loading spinner is visible, wait for it to disappear",
+            ],
         )
     """
     # ── Step 1: fast, free Playwright check ─────────────────────────────────
@@ -161,7 +175,42 @@ def smart_assert(
     ai_result = ai_verify(page, question, fallback=fallback)
     outcome = ai_result == expected
     log.info(f"smart_assert: Gemini says {'YES' if ai_result else 'NO'} → {'PASS' if outcome else 'FAIL'}")
-    return outcome
+
+    if outcome:
+        return True
+
+    # ── Step 3: AI also says FAIL — attempt autonomous recovery ─────────────
+    if not recovery_steps:
+        return False
+
+    log.info(f"smart_assert: attempting autonomous recovery with {len(recovery_steps)} step(s)")
+    agent = AIAgent(page)
+    recovery_results = agent.run_steps(recovery_steps)
+    failed_steps = [s for s, p in recovery_results.items() if not p]
+    if failed_steps:
+        log.warning(f"smart_assert: {len(failed_steps)} recovery step(s) failed: {failed_steps}")
+    else:
+        log.info("smart_assert: all recovery steps completed — retrying assertion")
+
+    # ── Step 4: retry original Playwright check after recovery ───────────────
+    try:
+        recovered = bool(check_fn())
+    except Exception:  # noqa: BLE001
+        recovered = False
+
+    if recovered:
+        log.info("smart_assert: PASS after autonomous recovery")
+        return True
+
+    # ── Step 5: final AI verify after recovery ───────────────────────────────
+    log.info("smart_assert: Playwright still failing — running final ai_verify after recovery")
+    final_ai = ai_verify(page, question, fallback=fallback)
+    final_outcome = final_ai == expected
+    log.info(
+        f"smart_assert: post-recovery Gemini says {'YES' if final_ai else 'NO'} "
+        f"→ {'PASS' if final_outcome else 'FAIL'}"
+    )
+    return final_outcome
 
 
 # ---------------------------------------------------------------------------
@@ -183,22 +232,51 @@ def ai_find_selector(page, description: str) -> Optional[str]:
         log.warning(f"ai_find_selector skipped (no client). description={description!r}")
         return None
 
-    html_snippet = page.evaluate("() => document.body.innerHTML.slice(0, 8000)")
+    html_snippet = page.evaluate("() => document.body.innerHTML.slice(0, 15000)")
     prompt = (
-        f"You are helping automate a browser test.\n\n"
-        f"Element to find: {description}\n\n"
-        f"Here is the page HTML (first 8000 chars):\n{html_snippet}\n\n"
-        f"Return ONLY a single valid CSS selector that uniquely targets this "
-        f"element. No explanation, no markdown, just the selector string."
+        f"You are a Playwright browser test automation expert.\n\n"
+        f"Task: Find the CSS selector for this element: {description}\n\n"
+        f"Page HTML (first 15000 chars):\n{html_snippet}\n\n"
+        f"STRICT RULES:\n"
+        f"1. Return ONLY the raw CSS selector — no markdown, no backticks, no quotes, no explanation\n"
+        f"2. Prefer stable selectors in this order:\n"
+        f"   - input[type='search'] or input[type='text']\n"
+        f"   - [placeholder='...'] with exact placeholder text from the HTML\n"
+        f"   - [aria-label='...'] or [data-testid='...']\n"
+        f"   - a[href*='keyword'] for navigation links\n"
+        f"   - button with text content\n"
+        f"3. NEVER use generated class names like .css-1abc123 or .MuiInput-abc\n"
+        f"4. The selector must match a VISIBLE element currently on the page\n"
+        f"5. Simpler is better — one attribute selector beats a long chain\n\n"
+        f"Look at both the screenshot AND the HTML to identify the element."
     )
     try:
         img = _image_part(_screenshot_bytes(page))
         response = client.models.generate_content(
             model=MODEL, contents=[img, prompt]
         )
-        selector = response.text.strip().strip("`").strip("'").strip('"')
+        raw = response.text.strip()
+        # Strip markdown code fences
+        if "```" in raw:
+            parts = raw.split("```")
+            raw = parts[1] if len(parts) > 1 else raw
+            if raw.split("\n")[0].lower() in ("css", "html", "python", ""):
+                raw = "\n".join(raw.split("\n")[1:])
+        selector = raw.strip().strip("`").strip("'").strip('"').strip()
+
+        # Validate — if selector matches nothing, log a warning but still return it
+        # (the page state may have changed; let the caller decide)
+        try:
+            count = page.locator(selector).count()
+            if count == 0:
+                log.warning(f"ai_find_selector: {selector!r} matched 0 elements on page")
+            else:
+                log.info(f"ai_find_selector: {selector!r} matched {count} element(s)")
+        except Exception:  # noqa: BLE001
+            pass
+
         log.info(f"ai_find_selector → {selector!r} | description={description!r}")
-        return selector
+        return selector if selector else None
     except Exception as exc:  # noqa: BLE001
         log.warning(f"ai_find_selector failed ({exc})")
         return None
@@ -258,16 +336,24 @@ class AIAgent:
             return True
 
         prompt = (
-            "You are a browser automation agent. Given a screenshot of the current "
-            "page and a plain-English test step, return a JSON object describing "
-            "exactly ONE action to perform. No explanation — only valid JSON.\n\n"
-            "Action schema (pick one):\n"
-            '  {"action":"click",    "selector":"<css>",  "description":"<why>"}\n'
-            '  {"action":"fill",     "selector":"<css>",  "value":"<text>"}\n'
-            '  {"action":"navigate", "url":"<full url>"}\n'
-            '  {"action":"verify",   "question":"<yes/no question>", "expected":true}\n'
-            '  {"action":"wait",     "ms":1000}\n\n'
-            f"Current test step: {step}"
+            "You are a Playwright browser automation agent.\n\n"
+            "Look at the screenshot carefully and perform this test step:\n"
+            f"{step}\n\n"
+            "Return ONLY a valid JSON object for ONE action — no explanation, no markdown.\n\n"
+            "Available actions:\n"
+            '  {"action":"click",    "selector":"<css_selector>", "description":"<why>"}\n'
+            '  {"action":"fill",     "selector":"<css_selector>", "value":"<text to type>"}\n'
+            '  {"action":"navigate", "url":"<full https:// url>"}\n'
+            '  {"action":"verify",   "question":"<yes/no question about screenshot>", "expected":true}\n'
+            '  {"action":"wait",     "ms":1500}\n\n'
+            "SELECTOR RULES:\n"
+            "- Use text-based: button:has-text('Letter Type'), a:has-text('Letter Configuration')\n"
+            "- Use attribute-based: a[href*='letter-type'], input[type='search']\n"
+            "- Use aria: [role='button'][aria-label='...'], [aria-expanded='false']\n"
+            "- NEVER use generated classes like .css-abc123 or .MuiBox-root\n"
+            "- For sidebar expand buttons, use: button:has-text('Letter Configuration')\n"
+            "- For sidebar links, use: a:has-text('Letter Type') or a[href*='letter-type']\n\n"
+            "Return raw JSON only. Example: {\"action\":\"click\",\"selector\":\"a:has-text('Letter Type')\",\"description\":\"click nav link\"}"
         )
         try:
             img = _image_part(_screenshot_bytes(self.page))
@@ -275,10 +361,14 @@ class AIAgent:
                 model=MODEL, contents=[img, prompt]
             )
             raw = response.text.strip()
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
+            # Strip markdown fences
+            if "```" in raw:
+                parts = raw.split("```")
+                raw = parts[1] if len(parts) > 1 else raw
+                first_line = raw.split("\n")[0].lower()
+                if first_line in ("json", ""):
+                    raw = "\n".join(raw.split("\n")[1:])
+            raw = raw.strip()
             instruction = json.loads(raw)
             return self._dispatch(instruction)
         except Exception as exc:  # noqa: BLE001
@@ -289,8 +379,19 @@ class AIAgent:
         action = instruction.get("action", "")
         try:
             if action == "click":
-                self.page.locator(instruction["selector"]).first.click(timeout=10_000)
-                self.page.wait_for_load_state("networkidle", timeout=10_000)
+                selector = instruction["selector"]
+                locator = self.page.locator(selector).first
+                # Fallback: try get_by_text if selector matches nothing
+                if locator.count() == 0:
+                    text = instruction.get("description", "")
+                    self.log.warning(f"Selector {selector!r} matched nothing — trying text fallback")
+                    locator = self.page.get_by_text(selector.replace("a:has-text('", "").replace("')", ""), exact=False).first
+                locator.scroll_into_view_if_needed()
+                locator.click(timeout=10_000)
+                try:
+                    self.page.wait_for_load_state("networkidle", timeout=8_000)
+                except Exception:  # noqa: BLE001
+                    pass
                 return True
             if action == "fill":
                 self.page.locator(instruction["selector"]).first.fill(

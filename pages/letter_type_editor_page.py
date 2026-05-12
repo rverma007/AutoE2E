@@ -11,9 +11,14 @@ class LetterTypeEditorPage(BasePage):
     def _editor_container(self):
         return self.page.locator(
             ".ql-editor, "
+            ".ProseMirror, "
+            ".CodeMirror-scroll, "
             "[class*='editor-container'], "
             "[class*='letter-editor'], "
+            "[class*='EditorContainer'], "
+            "[class*='RichText'], "
             "[contenteditable='true'], "
+            "[role='textbox'], "
             "[data-testid='letter-editor']"
         ).first
 
@@ -68,7 +73,8 @@ class LetterTypeEditorPage(BasePage):
     def is_loaded(self, timeout: int = 20_000) -> bool:
         if self.is_visible(self._editor_container, timeout=timeout):
             return True
-        return "edit" in self.page.url or "editor" in self.page.url
+        url = self.page.url
+        return "edit" in url or "editor" in url or self.PATH in url
 
     def click_reset(self) -> None:
         self.safe_click(self.reset_button, "Reset")

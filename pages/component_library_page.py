@@ -97,9 +97,14 @@ class ComponentLibraryPage(BasePage):
     def row_count(self) -> int:
         return self._list_rows.count()
 
-    def upload_sample_file(self, file_path: str) -> None:
+    def upload_sample_file(self, file_path: str) -> bool:
         if self.is_visible(self.upload_sample_button, timeout=5_000):
             self.safe_click(self.upload_sample_button, "Upload Sample")
             self.page.wait_for_timeout(500)
-        self.upload_sample_input.set_input_files(file_path)
-        self.wait_for_idle()
+        try:
+            self.upload_sample_input.set_input_files(file_path, timeout=10_000)
+            self.wait_for_idle()
+            return True
+        except Exception as exc:  # noqa: BLE001
+            self.log.warning(f"File upload not available (custom picker): {exc}")
+            return False

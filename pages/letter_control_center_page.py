@@ -107,15 +107,20 @@ class LetterControlCenterPage(BasePage):
     def is_filters_section_visible(self, timeout: int = 10_000) -> bool:
         return self.is_visible(self.filter_button, timeout=timeout)
 
-    def upload_xml_and_generate(self, file_path: str) -> None:
+    def upload_xml_and_generate(self, file_path: str) -> bool:
         if self.is_visible(self.xml_upload_button, timeout=5_000):
             self.safe_click(self.xml_upload_button, "Upload XML button")
             self.page.wait_for_timeout(500)
-        self.xml_upload_input.set_input_files(file_path)
+        try:
+            self.xml_upload_input.set_input_files(file_path, timeout=10_000)
+        except Exception as exc:  # noqa: BLE001
+            self.log.warning(f"XML file input not available (custom picker): {exc}")
+            return False
         self.wait_for_idle()
         if self.is_visible(self.generate_button, timeout=8_000):
             self.safe_click(self.generate_button, "Generate")
         self.wait_for_idle()
+        return True
 
     def first_row_status(self, timeout: int = 5_000) -> str:
         candidates = [
