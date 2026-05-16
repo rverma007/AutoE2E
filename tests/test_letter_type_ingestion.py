@@ -761,87 +761,28 @@ class TestLetterTypeIngestion:
 
         import re as _re
 
-        # ── 12. Wait for listing page ready, then search ──────────────────────
-        with allure.step(f"Search listing for '{name}' after ingestion"):
-            _refresh_btn = authed_page.locator(
-                "button[aria-label*='refresh' i], "
-                "button[aria-label*='Refresh' i], "
-                "button[title*='refresh' i], "
-                "button[title*='Refresh' i], "
-                "[data-testid*='refresh']"
-            ).first
-
-            # Dismiss Ask Auto popup then wait for search box
-            _dismiss_popup(authed_page)
+        # ── 12. Search listing and open the letter detail page ────────────────
+        with allure.step(f"Search for '{name}' and open its detail page"):
+            # Wait for listing page / search box to be ready
             try:
                 ltp.search_box.wait_for(state="visible", timeout=15_000)
             except Exception:
                 ltp.open_direct()
-                _dismiss_popup(authed_page)
                 ltp.search_box.wait_for(state="visible", timeout=15_000)
-            authed_page.wait_for_timeout(1_000)
+            authed_page.wait_for_timeout(500)
 
-            def _do_search() -> list:
-                _dismiss_popup(authed_page)
-                ltp.search("")
-                authed_page.wait_for_timeout(500)
-                ltp.search(name)
-                authed_page.keyboard.press("Enter")
-                authed_page.wait_for_timeout(500)
-                try:
-                    authed_page.wait_for_load_state("networkidle", timeout=6_000)
-                except Exception:
-                    pass
-                _wait_for_real_rows(ltp, timeout_s=8)
-                return ltp.visible_row_texts(limit=10)
-
-            def _get_status(_unused_rows: list = None) -> str:
-                """Read status directly from the matched table row using textContent
-                (captures off-screen columns that inner_text misses)."""
-                table_rows = authed_page.locator("table tbody tr")
-                for i in range(min(table_rows.count(), 10)):
-                    try:
-                        row = table_rows.nth(i)
-                        # textContent gets ALL text including overflow/off-screen cells
-                        all_text = (row.evaluate("el => el.textContent") or "").lower()
-                        if name.lower() not in all_text:
-                            continue
-                        for status in ("pipeline error", "draft", "processing", "approved", "published"):
-                            if status in all_text:
-                                return status
-                    except Exception:
-                        pass
-                return ""
-
-            def _do_refresh():
-                try:
-                    if ltp.is_visible(_refresh_btn, timeout=3_000):
-                        _refresh_btn.click()
-                    else:
-                        authed_page.reload(wait_until="domcontentloaded", timeout=20_000)
-                    try:
-                        authed_page.wait_for_load_state("networkidle", timeout=10_000)
-                    except Exception:
-                        pass
-                    authed_page.wait_for_timeout(2_000)
-                    _wait_for_real_rows(ltp, timeout_s=10)
-                except Exception:
-                    pass
-
-            # Poll until status leaves 'Processing' (or not found) — max 3 min
-            import time as _time
-            _poll_deadline = _time.monotonic() + 180
-            row_texts = _do_search()
-            while _time.monotonic() < _poll_deadline:
-                status = _get_status()
-                if status in ("draft", "pipeline error"):
-                    break  # terminal state reached
-                # Still processing or not found yet — refresh and retry
-                print(f"   ⏳ Status='{status or 'not found'}' for '{name}' — refreshing…")
-                _do_refresh()
-                row_texts = _do_search()
-            else:
-                print(f"   ⚠️ Polling timeout for '{name}' — proceeding with last result")
+            # Search
+            ltp.search("")
+            authed_page.wait_for_timeout(300)
+            ltp.search(name)
+            authed_page.keyboard.press("Enter")
+            authed_page.wait_for_timeout(500)
+            try:
+                authed_page.wait_for_load_state("networkidle", timeout=6_000)
+            except Exception:
+                pass
+            _wait_for_real_rows(ltp, timeout_s=8)
+            row_texts = ltp.visible_row_texts(limit=10)
 
             allure.attach(
                 "\n".join(f"Row {i}: {t[:120]}" for i, t in enumerate(row_texts)),
@@ -852,8 +793,7 @@ class TestLetterTypeIngestion:
         # ── 13a. Assert: letter appears in search results ─────────────────────
         with allure.step(f"Assert '{name}' is visible in search results"):
             assert row_texts, (
-                f"Search for '{name}' returned no rows — "
-                f"ingested letter type (BU={bu_raw}) not visible in the listing."
+                f"Search for '{name}' returned no rows — letter not visible in listing."
             )
             matched_row = next(
                 (t for t in row_texts if name.lower() in t.lower()), None
@@ -872,17 +812,79 @@ class TestLetterTypeIngestion:
                     f"Row text: {matched_row[:200]!r}"
                 )
 
-        # ── 13c. Assert: status is Draft, not Pipeline Error ──────────────────
-        with allure.step(f"Assert status is 'Draft' (not 'Pipeline Error') for '{name}'"):
-            final_status = _get_status()
-            if final_status == "pipeline error":
-                assert False, (
-                    f"FAIL — '{name}' (BU={bu_raw}) has status 'Pipeline Error'."
-                )
-            assert final_status == "draft", (
-                f"FAIL — '{name}' (BU={bu_raw}) does not show 'Draft' status. "
-                f"Detected status: '{final_status or 'unknown'}'"
+        # ── 13c. Open detail page and assert Status = Draft ───────────────────
+        with allure.step(f"Open detail page and assert status is 'Draft' for '{name}'"):
+            # Click the first matching row to open the detail page
+            table_rows = authed_page.locator("table tbody tr")
+            detail_row = None
+            for i in range(min(table_rows.count(), 5)):
+                try:
+                    row = table_rows.nth(i)
+                    if name.lower() in (row.evaluate("el => el.textContent") or "").lower():
+                        detail_row = row
+                        break
+                except Exception:
+                    pass
+
+            assert detail_row is not None, (
+                f"Could not locate row for '{name}' to click into detail page."
             )
+
+            detail_row.click(timeout=8_000)
+            try:
+                authed_page.wait_for_url("**/letter-type-detail**", timeout=15_000)
+            except Exception:
+                pass
+
+            assert "letter-type-detail" in authed_page.url, (
+                f"FAIL — Detail page did not open for '{name}'. URL: {authed_page.url}"
+            )
+
+            # Read Status from the detail page panel
+            status_value = ""
+            try:
+                # "Status" label + adjacent chip/text on the detail panel
+                status_loc = authed_page.locator(
+                    "text=Status >> xpath=following-sibling::*[1]"
+                ).first
+                if not status_loc.count():
+                    status_loc = authed_page.locator(
+                        "[class*='status' i], [data-testid*='status' i]"
+                    ).first
+                status_value = (status_loc.inner_text(timeout=5_000) or "").strip().lower()
+            except Exception:
+                pass
+
+            if not status_value:
+                # fallback: scan all visible text on panel for known status words
+                panel_text = (authed_page.evaluate(
+                    "() => document.body.textContent"
+                ) or "").lower()
+                for s in ("pipeline error", "draft", "processing", "approved", "published"):
+                    if s in panel_text:
+                        status_value = s
+                        break
+
+            allure.attach(
+                f"Detail page URL : {authed_page.url}\nStatus detected : {status_value!r}",
+                name="Detail page status",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+
+            if status_value == "pipeline error":
+                assert False, (
+                    f"FAIL — '{name}' (BU={bu_raw}) has status 'Pipeline Error' on detail page."
+                )
+            assert status_value == "draft", (
+                f"FAIL — '{name}' (BU={bu_raw}) status is '{status_value or 'unknown'}', expected 'Draft'."
+            )
+
+            # Go back to listing for next BU
+            authed_page.go_back(wait_until="domcontentloaded", timeout=15_000)
+            try:
+                ltp.search_box.wait_for(state="visible", timeout=10_000)
+            except Exception:
+                pass
 
         # ── 14. Save to shared testdata so download TC can find this letter ───
         with allure.step(f"Save '{name}' to testdata for download TC"):
