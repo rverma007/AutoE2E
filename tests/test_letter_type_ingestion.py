@@ -759,7 +759,7 @@ class TestLetterTypeIngestion:
                 pass
             _dismiss_popup(authed_page)
 
-        # ── 12. Search; refresh once only if letter not found ─────────────────
+        # ── 12. Search; refresh and retry if letter not found or shows Pipeline Error ──
         with allure.step(f"Search for {name!r} in the listing"):
             _refresh_btn = authed_page.locator(
                 "button[aria-label*='refresh' i], "
@@ -776,9 +776,9 @@ class TestLetterTypeIngestion:
             )
 
             def _do_search() -> list:
-                ltp.search("")          # clear any previous search
+                ltp.search("")
                 authed_page.wait_for_timeout(300)
-                ltp.search(name)        # search with the exact ingested name
+                ltp.search(name)
                 authed_page.keyboard.press("Enter")
                 try:
                     authed_page.wait_for_load_state("networkidle", timeout=6_000)
@@ -787,16 +787,31 @@ class TestLetterTypeIngestion:
                 _wait_for_real_rows(ltp, timeout_s=8)
                 return ltp.visible_row_texts(limit=10)
 
+            def _needs_refresh(rows: list) -> bool:
+                matched = next((t for t in rows if name.lower() in t.lower()), None)
+                if matched is None:
+                    return True  # letter not found yet
+                import re as _re
+                if _re.search(r"\bpipeline\s*error\b", matched, _re.I):
+                    return True  # found but still processing / pipeline error
+                return False
+
             row_texts = _do_search()
-            if not any(name.lower() in t.lower() for t in row_texts):
-                # Letter not visible yet — refresh once and search again
-                if ltp.is_visible(_refresh_btn, timeout=3_000):
-                    _refresh_btn.click()
+            if _needs_refresh(row_texts):
+                # Refresh page and wait before retrying search
+                try:
+                    if ltp.is_visible(_refresh_btn, timeout=3_000):
+                        _refresh_btn.click()
+                    else:
+                        authed_page.reload(wait_until="domcontentloaded", timeout=20_000)
                     try:
-                        authed_page.wait_for_load_state("networkidle", timeout=6_000)
+                        authed_page.wait_for_load_state("networkidle", timeout=10_000)
                     except Exception:
                         pass
-                    _wait_for_real_rows(ltp, timeout_s=8)
+                    authed_page.wait_for_timeout(2_000)
+                    _wait_for_real_rows(ltp, timeout_s=10)
+                except Exception:
+                    pass
                 row_texts = _do_search()
 
         # ── 13. Assert ingested letter is searchable and appears in the list ────
