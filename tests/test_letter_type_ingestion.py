@@ -759,8 +759,10 @@ class TestLetterTypeIngestion:
                 pass
             _dismiss_popup(authed_page)
 
-        # ── 12. Search; refresh and retry if letter not found or shows Pipeline Error ──
-        with allure.step(f"Search for {name!r} in the listing"):
+        import re as _re
+
+        # ── 12. Wait for listing page ready, then search ──────────────────────
+        with allure.step(f"Search listing for '{name}' after ingestion"):
             _refresh_btn = authed_page.locator(
                 "button[aria-label*='refresh' i], "
                 "button[aria-label*='Refresh' i], "
@@ -769,22 +771,12 @@ class TestLetterTypeIngestion:
                 "[data-testid*='refresh']"
             ).first
 
-            allure.attach(
-                f"Searching for ingested letter type name: {name!r}",
-                name="Search term",
-                attachment_type=allure.attachment_type.TEXT,
-            )
-
-            # Wait for the listing page to be ready before searching
+            # Assert listing page is ready (search box visible)
             try:
                 ltp.search_box.wait_for(state="visible", timeout=15_000)
             except Exception:
-                # If search box not found, navigate back to listing
                 ltp.open_direct()
-                try:
-                    ltp.search_box.wait_for(state="visible", timeout=15_000)
-                except Exception:
-                    pass
+                ltp.search_box.wait_for(state="visible", timeout=15_000)
             authed_page.wait_for_timeout(1_000)
 
             def _do_search() -> list:
@@ -803,15 +795,11 @@ class TestLetterTypeIngestion:
             def _needs_refresh(rows: list) -> bool:
                 matched = next((t for t in rows if name.lower() in t.lower()), None)
                 if matched is None:
-                    return True  # letter not found yet
-                import re as _re
-                if _re.search(r"\bpipeline\s*error\b", matched, _re.I):
-                    return True  # found but still processing / pipeline error
-                return False
+                    return True
+                return bool(_re.search(r"\bpipeline\s*error\b", matched, _re.I))
 
             row_texts = _do_search()
             if _needs_refresh(row_texts):
-                # Refresh page and wait before retrying search
                 try:
                     if ltp.is_visible(_refresh_btn, timeout=3_000):
                         _refresh_btn.click()
@@ -827,54 +815,47 @@ class TestLetterTypeIngestion:
                     pass
                 row_texts = _do_search()
 
-        # ── 13. Assert ingested letter is searchable and appears in the list ────
-        with allure.step(
-            f"Assert '{name}' appears in the listing after searching by its name"
-        ):
             allure.attach(
-                f"Ingested letter type name : {name!r}\n"
-                f"Ingested external ID      : {ext_id!r}\n"
-                f"BU                        : {bu_raw}\n\n"
-                + "\n".join(f"Row {i}: {t[:120]}" for i, t in enumerate(row_texts)),
+                "\n".join(f"Row {i}: {t[:120]}" for i, t in enumerate(row_texts)),
                 name="Search results",
                 attachment_type=allure.attachment_type.TEXT,
             )
 
-            # 1. Search returned at least one row
+        # ── 13a. Assert: letter appears in search results ─────────────────────
+        with allure.step(f"Assert '{name}' is visible in search results"):
             assert row_texts, (
                 f"Search for '{name}' returned no rows — "
                 f"ingested letter type (BU={bu_raw}) not visible in the listing."
             )
-
-            # 2. The ingested letter name appears in the results
             matched_row = next(
                 (t for t in row_texts if name.lower() in t.lower()), None
             )
             assert matched_row is not None, (
-                f"Searched for '{name}' but it was not found in any result row.\n"
+                f"'{name}' not found in any result row.\n"
                 f"BU={bu_raw}, External ID={ext_id!r}\n"
-                f"Visible rows:\n"
-                + "\n".join(f"  {t[:120]}" for t in row_texts)
+                f"Visible rows:\n" + "\n".join(f"  {t[:120]}" for t in row_texts)
             )
 
-            # 3. The matching row also contains the External ID
+        # ── 13b. Assert: External ID present in matched row ───────────────────
+        with allure.step(f"Assert External ID '{ext_id}' is present in the row"):
             if ext_id:
                 assert ext_id.lower() in matched_row.lower(), (
-                    f"Row containing '{name}' does not show External ID '{ext_id}'.\n"
+                    f"Row for '{name}' does not contain External ID '{ext_id}'.\n"
                     f"Row text: {matched_row[:200]!r}"
                 )
 
-            # 4. Assert status is Draft (pass) — fail explicitly if Pipeline Error
-            import re as _re
+        # ── 13c. Assert: status is Draft, not Pipeline Error ──────────────────
+        with allure.step(f"Assert status is 'Draft' (not 'Pipeline Error') for '{name}'"):
             if _re.search(r"\bpipeline\s*error\b", matched_row, _re.I):
                 assert False, (
-                    f"FAIL — Letter '{name}' (BU={bu_raw}) has status 'Pipeline Error'.\n"
+                    f"FAIL — '{name}' (BU={bu_raw}) has status 'Pipeline Error'.\n"
                     f"Row text: {matched_row[:200]!r}"
                 )
             assert _re.search(r"\bdraft\b", matched_row, _re.I), (
-                f"FAIL — Letter '{name}' (BU={bu_raw}) does not show 'Draft' status.\n"
+                f"FAIL — '{name}' (BU={bu_raw}) does not show 'Draft' status.\n"
                 f"Row text: {matched_row[:200]!r}"
             )
 
-            # 5. Save to shared testdata so download TC can find this letter
+        # ── 14. Save to shared testdata so download TC can find this letter ───
+        with allure.step(f"Save '{name}' to testdata for download TC"):
             _save_ingested_letter(name, bu_raw)
