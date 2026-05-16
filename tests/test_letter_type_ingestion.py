@@ -840,6 +840,30 @@ class TestLetterTypeIngestion:
                 f"FAIL — Detail page did not open for '{name}'. URL: {authed_page.url}"
             )
 
+            # Wait a moment for preview/panel to load
+            authed_page.wait_for_timeout(3_000)
+
+            # Check for PDF load errors in the preview area
+            _pdf_error_patterns = [
+                r"failed\s+to\s+load\s+pdf",
+                r"unable\s+to\s+load",
+                r"pdf.*(?:failed|error)",
+                r"error.*loading.*pdf",
+            ]
+            _preview_text = ""
+            try:
+                _preview_text = (authed_page.evaluate(
+                    "() => document.body.textContent"
+                ) or "").lower()
+            except Exception:
+                pass
+            for _pat in _pdf_error_patterns:
+                if _re.search(_pat, _preview_text, _re.I):
+                    assert False, (
+                        f"FAIL — '{name}' (BU={bu_raw}) detail page shows PDF load error: "
+                        f"'{_re.search(_pat, _preview_text, _re.I).group()}'."
+                    )
+
             # Read Status from the detail page panel
             status_value = ""
             try:
