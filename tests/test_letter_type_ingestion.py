@@ -830,53 +830,41 @@ class TestLetterTypeIngestion:
                 f"Could not locate row for '{name}' to click into detail page."
             )
 
-            # Scroll into view and dismiss any overlays
+            # Scroll into view
             detail_row.scroll_into_view_if_needed()
-            authed_page.wait_for_timeout(300)
+            authed_page.wait_for_timeout(400)
+
+            url_before = authed_page.url
+
+            # Strategy 1: click the letter name cell (skips checkbox cell)
             try:
-                authed_page.evaluate("""() => {
-                    document.querySelectorAll('[role="tooltip"]').forEach(el => {
-                        el.style.display = 'none';
-                    });
-                }""")
+                name_cell = detail_row.locator("td").filter(
+                    has_text=_re.compile(_re.escape(name[:25]), _re.I)
+                ).first
+                if name_cell.count() and name_cell.is_visible(timeout=1_000):
+                    name_cell.click(timeout=6_000)
             except Exception:
                 pass
 
-            # Try clicking the LT-ID cell first (most reliable), then fall back to row
-            clicked = False
-            cells = detail_row.locator("td")
-            for nth in range(min(cells.count(), 3)):
-                try:
-                    cell = cells.nth(nth)
-                    cell_text = (cell.inner_text(timeout=500) or "").strip()
-                    if _re.match(r"^LT-\d+", cell_text):
-                        cell.click(timeout=5_000)
-                        clicked = True
-                        break
-                except Exception:
-                    pass
-
-            if not clicked:
-                # Try clicking the name cell
-                try:
-                    name_cell = detail_row.locator(f"td:has-text('{name[:30]}')")
-                    if name_cell.count():
-                        name_cell.first.click(timeout=5_000)
-                        clicked = True
-                except Exception:
-                    pass
-
-            if not clicked:
-                # Force-click the row itself
-                for method in [
-                    lambda: detail_row.click(timeout=5_000),
-                    lambda: detail_row.click(force=True, timeout=5_000),
-                    lambda: detail_row.evaluate("el => el.click()"),
-                ]:
+            # Strategy 2: click any non-checkbox text cell (td index >= 1)
+            if authed_page.url == url_before:
+                cells = detail_row.locator("td")
+                for nth in range(1, min(cells.count(), 5)):
                     try:
-                        method()
-                        clicked = True
-                        break
+                        cell = cells.nth(nth)
+                        if cell.is_visible(timeout=500):
+                            cell.click(timeout=5_000)
+                            break
+                    except Exception:
+                        pass
+
+            # Strategy 3: force-click the row
+            if authed_page.url == url_before:
+                try:
+                    detail_row.click(force=True, timeout=5_000)
+                except Exception:
+                    try:
+                        detail_row.evaluate("el => el.click()")
                     except Exception:
                         pass
 
