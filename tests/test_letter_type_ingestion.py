@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import os
 import re
+import json
 import random
 import string
 import time
@@ -31,6 +32,29 @@ from openpyxl import load_workbook
 from playwright.sync_api import Page
 
 from pages.letter_type_page import LetterTypePage
+
+# ── Shared testdata (read by test_download_pdf_and_docx_after_ingestion) ──────
+_TESTS_DIR    = os.path.dirname(os.path.abspath(__file__))
+_TESTDATA_DIR = os.path.join(_TESTS_DIR, "testdata")
+_TESTDATA_FILE = os.path.join(_TESTDATA_DIR, "ingested_letters.json")
+
+
+def _save_ingested_letter(letter_name: str, bu_name: str) -> None:
+    """Append a successfully ingested letter to the shared testdata JSON."""
+    os.makedirs(_TESTDATA_DIR, exist_ok=True)
+    try:
+        with open(_TESTDATA_FILE, encoding="utf-8") as f:
+            existing = json.load(f)
+        if not isinstance(existing, list):
+            existing = []
+    except Exception:
+        existing = []
+    key = (letter_name.strip(), bu_name.strip())
+    if not any((r["letter_name"].strip(), r["bu_name"].strip()) == key for r in existing):
+        existing.append({"letter_name": letter_name, "bu_name": bu_name})
+        with open(_TESTDATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(existing, f, indent=2)
+        print(f"📌 Saved to testdata: '{letter_name}' | BU: {bu_name}")
 
 pytestmark = pytest.mark.sanity
 
@@ -786,3 +810,6 @@ class TestLetterTypeIngestion:
                     f"Row containing '{name}' does not show External ID '{ext_id}'.\n"
                     f"Row text: {matched_row[:200]!r}"
                 )
+
+            # 4. Save to shared testdata so download TC can find this letter
+            _save_ingested_letter(name, bu_raw)
