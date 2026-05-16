@@ -230,8 +230,7 @@ def _select_bu(page: Page, bu: str) -> None:
 
     Match priority:
       1. Exact text match
-      2. First option whose text STARTS WITH bu (case-insensitive) — e.g. "UM" → "UM BU TEST"
-      3. First option whose text CONTAINS bu (case-insensitive)
+      2. First option whose text contains bu anywhere (case-insensitive)
     """
     sel = page.locator("#mui-component-select-businessUnitDropdown")
     sel.wait_for(state="visible", timeout=12_000)
@@ -247,13 +246,13 @@ def _select_bu(page: Page, bu: str) -> None:
         page.wait_for_timeout(400)
         return
 
-    # 2. Starts-with match — get all options and pick the first that starts with bu
+    # 2. First option containing bu anywhere in its text
     bu_lower = bu.strip().lower()
     items = listbox.locator("li[role='option'], li").all()
     for item in items:
         try:
             text = (item.inner_text(timeout=500) or "").strip().lower()
-            if text.startswith(bu_lower) and item.is_visible(timeout=300):
+            if bu_lower in text and item.is_visible(timeout=300):
                 item.click()
                 _close_mui_popover(page)
                 page.wait_for_timeout(400)
@@ -261,12 +260,7 @@ def _select_bu(page: Page, bu: str) -> None:
         except Exception:
             pass
 
-    # 3. Contains match fallback
-    partial = listbox.locator(f"li:has-text('{bu}')").first
-    partial.wait_for(state="visible", timeout=6_000)
-    partial.click()
-    _close_mui_popover(page)
-    page.wait_for_timeout(400)
+    raise RuntimeError(f"BU option containing '{bu}' not found in dropdown")
 
 
 def _upload_docx(page: Page, docx_path: str) -> None:
