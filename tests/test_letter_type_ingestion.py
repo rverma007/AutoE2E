@@ -818,5 +818,12 @@ class TestLetterTypeIngestion:
                     f"Row text: {matched_row[:200]!r}"
                 )
 
-            # 4. Save to shared testdata so download TC can find this letter
+            # 4. Assert the letter did NOT end up in Pipeline Error status
+            import re as _re
+            assert not _re.search(r"\bpipeline\s*error\b", matched_row, _re.I), (
+                f"Letter '{name}' (BU={bu_raw}) ingested but shows 'Pipeline Error' status.\n"
+                f"Row text: {matched_row[:200]!r}"
+            )
+
+            # 5. Save to shared testdata so download TC can find this letter
             _save_ingested_letter(name, bu_raw)
