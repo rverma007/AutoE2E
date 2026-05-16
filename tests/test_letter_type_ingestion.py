@@ -226,21 +226,45 @@ def _open_modal(page: Page) -> None:
 
 
 def _select_bu(page: Page, bu: str) -> None:
-    """Select the Business Unit from the MUI dropdown."""
+    """Select the Business Unit from the MUI dropdown.
+
+    Match priority:
+      1. Exact text match
+      2. First option whose text STARTS WITH bu (case-insensitive) — e.g. "UM" → "UM BU TEST"
+      3. First option whose text CONTAINS bu (case-insensitive)
+    """
     sel = page.locator("#mui-component-select-businessUnitDropdown")
     sel.wait_for(state="visible", timeout=12_000)
     sel.click()
     listbox = page.locator("ul[role='listbox']")
     listbox.wait_for(state="visible", timeout=8_000)
 
-    # Exact match first; fall back to partial (e.g. "ANG" → "Jasw ANG")
+    # 1. Exact match
     exact = listbox.locator(f"li:text-is('{bu}')").first
     if exact.count() and exact.is_visible(timeout=2_000):
         exact.click()
-    else:
-        partial = listbox.locator(f"li:has-text('{bu}')").first
-        partial.wait_for(state="visible", timeout=6_000)
-        partial.click()
+        _close_mui_popover(page)
+        page.wait_for_timeout(400)
+        return
+
+    # 2. Starts-with match — get all options and pick the first that starts with bu
+    bu_lower = bu.strip().lower()
+    items = listbox.locator("li[role='option'], li").all()
+    for item in items:
+        try:
+            text = (item.inner_text(timeout=500) or "").strip().lower()
+            if text.startswith(bu_lower) and item.is_visible(timeout=300):
+                item.click()
+                _close_mui_popover(page)
+                page.wait_for_timeout(400)
+                return
+        except Exception:
+            pass
+
+    # 3. Contains match fallback
+    partial = listbox.locator(f"li:has-text('{bu}')").first
+    partial.wait_for(state="visible", timeout=6_000)
+    partial.click()
     _close_mui_popover(page)
     page.wait_for_timeout(400)
 
@@ -623,13 +647,10 @@ class TestLetterTypeIngestion:
             _open_modal(authed_page)
 
         # ── 3. Select Business Unit ───────────────────────────────────────────
-        # Map short BU names from Excel to the full dropdown display name in the UI
-        _BU_DROPDOWN_MAP = {"UM": "UM BU TEST"}
-        bu_display = _BU_DROPDOWN_MAP.get(bu_raw.strip().upper(), bu_raw)
-        with allure.step(f"Select Business Unit: {bu_display!r}"):
-            _select_bu(authed_page, bu_display)
+        with allure.step(f"Select Business Unit: {bu_raw!r}"):
+            _select_bu(authed_page, bu_raw)
             allure.attach(
-                f"BU selected: {bu_display}",
+                f"BU selected: {bu_raw}",
                 name="BU selection",
                 attachment_type=allure.attachment_type.TEXT,
             )
