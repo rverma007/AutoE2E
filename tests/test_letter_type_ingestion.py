@@ -825,7 +825,8 @@ class TestLetterTypeIngestion:
             _start = authed_page.evaluate("() => Date.now()")
             while authed_page.evaluate("() => Date.now()") - _start < 20_000:
                 try:
-                    if "/letter-type/" in (authed_page.url or ""):
+                    _cur_url = authed_page.url or ""
+                    if "letter-type-detail" in _cur_url or "/letter-type/" in _cur_url:
                         return _row_texts, True
                 except Exception:
                     pass
@@ -891,7 +892,7 @@ class TestLetterTypeIngestion:
                 f"even after refresh + retry. URL: {authed_page.url}"
             )
 
-            assert "/letter-type/" in authed_page.url, (
+            assert "letter-type-detail" in authed_page.url or "/letter-type/" in authed_page.url, (
                 f"FAIL — Detail page did not open for '{name}'. URL: {authed_page.url}"
             )
 
