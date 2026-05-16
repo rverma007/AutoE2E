@@ -1,3 +1,4 @@
+﻿# Author: Ruchika Verma <testing.ruchika@gmail.com>
 """
 Audit Logger module — TC_SM_043 to TC_SM_048.
 

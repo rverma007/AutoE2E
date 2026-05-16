@@ -1,3 +1,4 @@
+﻿# Author: Ruchika Verma <testing.ruchika@gmail.com>
 """
 Letter Type Details module — TC_SM_013 to TC_SM_017.
 

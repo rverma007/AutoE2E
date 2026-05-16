@@ -1,3 +1,4 @@
+﻿# Author: Ruchika Verma <testing.ruchika@gmail.com>
 """
 Navigation smoke test — validates every sidebar page in a single test run.
 

@@ -1,3 +1,4 @@
+﻿# Author: Ruchika Verma <testing.ruchika@gmail.com>
 """
 Letter Consolidation module — TC_SM_050 to TC_SM_053.
 

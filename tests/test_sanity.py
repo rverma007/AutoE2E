@@ -1,3 +1,4 @@
+﻿# Author: Ruchika Verma <testing.ruchika@gmail.com>
 """
 Sanity / smoke tests for the Correspondence application.
 

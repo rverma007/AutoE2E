@@ -1,3 +1,4 @@
+﻿# Author: Ruchika Verma <testing.ruchika@gmail.com>
 """
 Letter Type Editor module — TC_SM_018 to TC_SM_023.
 

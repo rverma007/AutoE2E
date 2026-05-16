@@ -1,3 +1,4 @@
+﻿# Author: Ruchika Verma <testing.ruchika@gmail.com>
 """
 Settings module — TC_SM_041 to TC_SM_042.
 

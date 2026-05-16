@@ -1,0 +1,30 @@
+{
+  "run_ts": "2026-05-17T01:20:43",
+  "excel": "D:\\AutoPythone2e\\ingestion.xlsx",
+  "download_dir": "D:\\AutoPythone2e\\tests\\downloaded\\ingestion",
+  "total": 3,
+  "downloaded_count": 0,
+  "failed_count": 0,
+  "not_found_count": 3,
+  "ingestion_failed_count": 0,
+  "ingestion_failed": [],
+  "ingestion_failed_reasons": {},
+  "ingestion_breakdown": {
+    "pipeline_error_count": 0,
+    "pipeline_error": [],
+    "fail_to_load_count": 0,
+    "fail_to_load": [],
+    "not_found_count": 0,
+    "not_found": [],
+    "other_count": 0,
+    "other": []
+  },
+  "failed_reasons": {},
+  "downloaded": [],
+  "failed": [],
+  "not_found": [
+    "Full display name of the Letter Type",
+    "MHCA Approval_ARB",
+    "MAPD Multiple Claim ACK LTR"
+  ]
+}
