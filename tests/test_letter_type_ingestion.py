@@ -792,14 +792,17 @@ class TestLetterTypeIngestion:
                 _wait_for_real_rows(ltp, timeout_s=8)
                 return ltp.visible_row_texts(limit=10)
 
-            def _needs_refresh(rows: list) -> bool:
+            def _get_status(rows: list) -> str:
+                """Return the status token from the matched row, or '' if not found."""
                 matched = next((t for t in rows if name.lower() in t.lower()), None)
                 if matched is None:
-                    return True
-                return bool(_re.search(r"\bpipeline\s*error\b", matched, _re.I))
+                    return ""
+                for status in ("draft", "pipeline error", "processing", "approved", "published"):
+                    if _re.search(rf"\b{re.escape(status)}\b", matched, _re.I):
+                        return status.lower()
+                return ""
 
-            row_texts = _do_search()
-            if _needs_refresh(row_texts):
+            def _do_refresh():
                 try:
                     if ltp.is_visible(_refresh_btn, timeout=3_000):
                         _refresh_btn.click()
@@ -813,7 +816,21 @@ class TestLetterTypeIngestion:
                     _wait_for_real_rows(ltp, timeout_s=10)
                 except Exception:
                     pass
+
+            # Poll until status leaves 'Processing' (or not found) — max 3 min
+            import time as _time
+            _poll_deadline = _time.monotonic() + 180
+            row_texts = _do_search()
+            while _time.monotonic() < _poll_deadline:
+                status = _get_status(row_texts)
+                if status in ("draft", "pipeline error"):
+                    break  # terminal state reached
+                # Still processing or not found yet — refresh and retry
+                print(f"   ⏳ Status='{status or 'not found'}' for '{name}' — refreshing…")
+                _do_refresh()
                 row_texts = _do_search()
+            else:
+                print(f"   ⚠️ Polling timeout for '{name}' — proceeding with last result")
 
             allure.attach(
                 "\n".join(f"Row {i}: {t[:120]}" for i, t in enumerate(row_texts)),
