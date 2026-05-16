@@ -851,10 +851,15 @@ class TestLetterTypeIngestion:
                     f"Row text: {matched_row[:200]!r}"
                 )
 
-            # 4. Assert the letter did NOT end up in Pipeline Error status
+            # 4. Assert status is Draft (pass) — fail explicitly if Pipeline Error
             import re as _re
-            assert not _re.search(r"\bpipeline\s*error\b", matched_row, _re.I), (
-                f"Letter '{name}' (BU={bu_raw}) ingested but shows 'Pipeline Error' status.\n"
+            if _re.search(r"\bpipeline\s*error\b", matched_row, _re.I):
+                assert False, (
+                    f"FAIL — Letter '{name}' (BU={bu_raw}) has status 'Pipeline Error'.\n"
+                    f"Row text: {matched_row[:200]!r}"
+                )
+            assert _re.search(r"\bdraft\b", matched_row, _re.I), (
+                f"FAIL — Letter '{name}' (BU={bu_raw}) does not show 'Draft' status.\n"
                 f"Row text: {matched_row[:200]!r}"
             )
 
