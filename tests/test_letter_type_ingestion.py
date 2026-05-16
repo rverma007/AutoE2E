@@ -771,15 +771,18 @@ class TestLetterTypeIngestion:
                 "[data-testid*='refresh']"
             ).first
 
-            # Assert listing page is ready (search box visible)
+            # Dismiss Ask Auto popup then wait for search box
+            _dismiss_popup(authed_page)
             try:
                 ltp.search_box.wait_for(state="visible", timeout=15_000)
             except Exception:
                 ltp.open_direct()
+                _dismiss_popup(authed_page)
                 ltp.search_box.wait_for(state="visible", timeout=15_000)
             authed_page.wait_for_timeout(1_000)
 
             def _do_search() -> list:
+                _dismiss_popup(authed_page)
                 ltp.search("")
                 authed_page.wait_for_timeout(500)
                 ltp.search(name)
