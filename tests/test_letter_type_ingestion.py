@@ -623,10 +623,13 @@ class TestLetterTypeIngestion:
             _open_modal(authed_page)
 
         # ── 3. Select Business Unit ───────────────────────────────────────────
-        with allure.step(f"Select Business Unit: {bu_raw!r}"):
-            _select_bu(authed_page, bu_raw)
+        # Map short BU names from Excel to the full dropdown display name in the UI
+        _BU_DROPDOWN_MAP = {"UM": "UM U Test"}
+        bu_display = _BU_DROPDOWN_MAP.get(bu_raw.strip().upper(), bu_raw)
+        with allure.step(f"Select Business Unit: {bu_display!r}"):
+            _select_bu(authed_page, bu_display)
             allure.attach(
-                f"BU selected: {bu_raw}",
+                f"BU selected: {bu_display}",
                 name="BU selection",
                 attachment_type=allure.attachment_type.TEXT,
             )
