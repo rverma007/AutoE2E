@@ -20,6 +20,17 @@ TESTDATA_FILE = os.path.join(TESTDATA_DIR, "ingested_letters.json")
 FAIL_ON_DOWNLOAD_ERRORS = os.environ.get("FAIL_ON_DOWNLOAD_ERRORS", "0") == "1"
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _clean_download_dir_before_run():
+    """Wipe pdf_docx_downloads folder before the download module runs so each run starts fresh."""
+    import shutil
+    folder = os.path.join(DEFAULT_DOWNLOAD_ROOT, "pdf_docx_downloads")
+    if os.path.isdir(folder):
+        shutil.rmtree(folder)
+    os.makedirs(folder, exist_ok=True)
+    yield
+
+
 # ── testdata helpers ──────────────────────────────────────────────────────────
 
 def _save_ingested_letter(letter_name: str, bu_name: str):
