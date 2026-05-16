@@ -624,7 +624,7 @@ class TestLetterTypeIngestion:
 
         # ── 3. Select Business Unit ───────────────────────────────────────────
         # Map short BU names from Excel to the full dropdown display name in the UI
-        _BU_DROPDOWN_MAP = {"UM": "UM U Test"}
+        _BU_DROPDOWN_MAP = {"UM": "UM BU TEST"}
         bu_display = _BU_DROPDOWN_MAP.get(bu_raw.strip().upper(), bu_raw)
         with allure.step(f"Select Business Unit: {bu_display!r}"):
             _select_bu(authed_page, bu_display)
