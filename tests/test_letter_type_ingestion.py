@@ -761,17 +761,19 @@ class TestLetterTypeIngestion:
 
         import re as _re
 
-        # ── 12. Search listing and open the letter detail page ────────────────
-        with allure.step(f"Search for '{name}' and open its detail page"):
-            # Wait for listing page / search box to be ready
+        import re as _re  # already imported above but guard for safety
+
+        def _search_and_open_detail() -> tuple:
+            """Search for name, return (row_texts, on_detail_page).
+            Tries to click into detail page; returns True if navigation succeeded."""
+            # Ensure search box is ready
             try:
                 ltp.search_box.wait_for(state="visible", timeout=15_000)
             except Exception:
                 ltp.open_direct()
                 ltp.search_box.wait_for(state="visible", timeout=15_000)
-            authed_page.wait_for_timeout(500)
+            authed_page.wait_for_timeout(400)
 
-            # Search
             ltp.search("")
             authed_page.wait_for_timeout(300)
             ltp.search(name)
@@ -782,7 +784,77 @@ class TestLetterTypeIngestion:
             except Exception:
                 pass
             _wait_for_real_rows(ltp, timeout_s=8)
-            row_texts = ltp.visible_row_texts(limit=10)
+            _row_texts = ltp.visible_row_texts(limit=10)
+
+            # Find and click the matching row (LT-ID cell first, same as download TC)
+            table_rows = authed_page.locator("table tbody tr")
+            _detail_row = None
+            for i in range(min(table_rows.count(), 5)):
+                try:
+                    row = table_rows.nth(i)
+                    if name.lower() in (row.evaluate("el => el.textContent") or "").lower():
+                        _detail_row = row
+                        break
+                except Exception:
+                    pass
+
+            if _detail_row is None:
+                return _row_texts, False
+
+            _detail_row.scroll_into_view_if_needed()
+            authed_page.wait_for_timeout(300)
+
+            id_cell = None
+            for nth in [1, 0]:
+                try:
+                    cell = _detail_row.locator("td").nth(nth)
+                    if cell.count() > 0 and cell.is_visible(timeout=1_500):
+                        t = (cell.inner_text(timeout=1_500) or "").strip()
+                        if _re.match(r"^LT-\d+", t):
+                            id_cell = cell
+                            break
+                except Exception:
+                    pass
+
+            try:
+                (id_cell or _detail_row).click(timeout=5_000)
+            except Exception:
+                (id_cell or _detail_row).click(force=True, timeout=5_000)
+
+            # Wait up to 20s for detail page (URL or back-arrow)
+            _start = authed_page.evaluate("() => Date.now()")
+            while authed_page.evaluate("() => Date.now()") - _start < 20_000:
+                try:
+                    if "/letter-type/" in (authed_page.url or ""):
+                        return _row_texts, True
+                except Exception:
+                    pass
+                try:
+                    back = authed_page.locator(
+                        "button[aria-label*='back' i], "
+                        "[data-testid='ArrowBackIcon'], "
+                        "[data-testid='KeyboardBackspaceIcon']"
+                    ).first
+                    if back.count() and back.is_visible(timeout=300):
+                        return _row_texts, True
+                except Exception:
+                    pass
+                authed_page.wait_for_timeout(300)
+
+            return _row_texts, False
+
+        # ── 12. Search and open detail — refresh once and retry if detail doesn't open ──
+        with allure.step(f"Search for '{name}' and open its detail page"):
+            row_texts, on_detail = _search_and_open_detail()
+
+            if not on_detail:
+                print(f"   ⟳ Detail page did not open — refreshing and retrying…")
+                try:
+                    authed_page.reload(wait_until="domcontentloaded", timeout=20_000)
+                    authed_page.wait_for_timeout(2_000)
+                except Exception:
+                    pass
+                row_texts, on_detail = _search_and_open_detail()
 
             allure.attach(
                 "\n".join(f"Row {i}: {t[:120]}" for i, t in enumerate(row_texts)),
@@ -812,67 +884,12 @@ class TestLetterTypeIngestion:
                     f"Row text: {matched_row[:200]!r}"
                 )
 
-        # ── 13c. Open detail page and assert Status = Draft ───────────────────
-        with allure.step(f"Open detail page and assert status is 'Draft' for '{name}'"):
-            # Find the matching row
-            table_rows = authed_page.locator("table tbody tr")
-            detail_row = None
-            for i in range(min(table_rows.count(), 5)):
-                try:
-                    row = table_rows.nth(i)
-                    if name.lower() in (row.evaluate("el => el.textContent") or "").lower():
-                        detail_row = row
-                        break
-                except Exception:
-                    pass
-
-            assert detail_row is not None, (
-                f"Could not locate row for '{name}' to click into detail page."
+        # ── 13c. Assert: detail page opened ───────────────────────────────────
+        with allure.step(f"Assert detail page opened for '{name}'"):
+            assert on_detail, (
+                f"FAIL — Could not open detail page for '{name}' (BU={bu_raw}) "
+                f"even after refresh + retry. URL: {authed_page.url}"
             )
-
-            # Same click approach as download TC: find LT-xxx cell and click it
-            detail_row.scroll_into_view_if_needed()
-            authed_page.wait_for_timeout(300)
-
-            id_cell = None
-            for nth in [1, 0]:
-                try:
-                    cell = detail_row.locator("td").nth(nth)
-                    if cell.count() > 0 and cell.is_visible(timeout=1_500):
-                        t = (cell.inner_text(timeout=1_500) or "").strip()
-                        if _re.match(r"^LT-\d+", t):
-                            id_cell = cell
-                            break
-                except Exception:
-                    pass
-
-            try:
-                (id_cell or detail_row).click(timeout=5_000)
-            except Exception:
-                (id_cell or detail_row).click(force=True, timeout=5_000)
-
-            # Wait for detail page confirmed via URL or back-arrow (same as download TC)
-            _detail_start = authed_page.evaluate("() => Date.now()")
-            while True:
-                _now = authed_page.evaluate("() => Date.now()")
-                if _now - _detail_start > 20_000:
-                    break
-                try:
-                    if "/letter-type/" in (authed_page.url or ""):
-                        break
-                except Exception:
-                    pass
-                try:
-                    back = authed_page.locator(
-                        "button[aria-label*='back' i], "
-                        "[data-testid='ArrowBackIcon'], "
-                        "[data-testid='KeyboardBackspaceIcon']"
-                    ).first
-                    if back.count() and back.is_visible(timeout=300):
-                        break
-                except Exception:
-                    pass
-                authed_page.wait_for_timeout(300)
 
             assert "letter-type-detail" in authed_page.url, (
                 f"FAIL — Detail page did not open for '{name}'. URL: {authed_page.url}"
