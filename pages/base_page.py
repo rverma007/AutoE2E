@@ -13,14 +13,6 @@ from playwright.sync_api import Locator, Page, TimeoutError as PWTimeoutError
 from config.config import Config
 from utils.logger import get_logger
 
-# ---------------------------------------------------------------------------
-# Browser-level Ask Auto popup suppressor
-# ---------------------------------------------------------------------------
-# Injected into every page before first navigation.  Uses a MutationObserver
-# to hide the popup the instant it appears in the DOM, and a setInterval
-# fallback for popups that become visible via CSS class changes rather than
-# new DOM nodes.  Neither mechanism uses the Escape key, so other open
-# panels/drawers (Configure, Filter) are never accidentally closed.
 _SUPPRESS_POPUP_SCRIPT = """
 (function () {
     var MARKER = '__askAutoSuppressed';
@@ -46,7 +38,6 @@ _SUPPRESS_POPUP_SCRIPT = """
         });
     }
 
-    // Watch for new nodes and attribute changes that reveal the popup
     var obs = new MutationObserver(function (mutations) {
         mutations.forEach(function (m) {
             if (m.type === 'childList') {
@@ -63,7 +54,6 @@ _SUPPRESS_POPUP_SCRIPT = """
         attributeFilter: ['class', 'style', 'aria-hidden', 'hidden']
     });
 
-    // Interval safety net: catch any popup that slips through
     setInterval(function () {
         document.querySelectorAll('[role="dialog"]').forEach(function (d) {
             if (d.textContent && d.textContent.includes('What can I help with')
@@ -80,7 +70,6 @@ _SUPPRESS_POPUP_SCRIPT = """
 class BasePage:
     """All page objects extend this class."""
 
-    #: Subclasses may override to set a canonical URL path, e.g. "/login".
     PATH: str = ""
 
     def __init__(self, page: Page) -> None:
@@ -88,14 +77,11 @@ class BasePage:
         self.log = get_logger(self.__class__.__name__)
         self.page.set_default_timeout(Config.DEFAULT_TIMEOUT)
         self.page.set_default_navigation_timeout(Config.NAVIGATION_TIMEOUT)
-        # Inject the popup suppressor before any navigation so it runs on
-        # every page load for the lifetime of this Page object.
         try:
             self.page.add_init_script(_SUPPRESS_POPUP_SCRIPT)
         except Exception:  # noqa: BLE001
-            pass  # page may already be closed / detached in edge-case fixtures
+            pass
 
-    # ------------------------------------------------------------------ URLs
     @property
     def url(self) -> str:
         base = Config.BASE_URL.rstrip("/")
@@ -115,7 +101,6 @@ class BasePage:
             self.log.debug("domcontentloaded timed out — continuing.")
         self.wait_for_idle()
 
-    # ----------------------------------------------------------------- Waits
     def wait_for_idle(self, timeout: Optional[int] = None) -> None:
         try:
             self.page.wait_for_load_state(
@@ -124,13 +109,10 @@ class BasePage:
         except PWTimeoutError:
             self.log.debug("load state not reached — continuing.")
 
-    def wait_for_visible(
-        self, locator: Locator, timeout: Optional[int] = None
-    ) -> Locator:
+    def wait_for_visible(self, locator: Locator, timeout: Optional[int] = None) -> Locator:
         locator.wait_for(state="visible", timeout=timeout or Config.DEFAULT_TIMEOUT)
         return locator
 
-    # --------------------------------------------------------- Safe primitives
     def safe_click(self, locator: Locator, label: str = "") -> None:
         self.wait_for_visible(locator)
         locator.scroll_into_view_if_needed()
@@ -143,8 +125,6 @@ class BasePage:
         locator.fill(value)
 
     def is_visible(self, locator: Locator, timeout: int = 2_000) -> bool:
-        # Use wait_for so the timeout parameter is actually honoured
-        # (locator.is_visible() is an instant check with no retry).
         try:
             locator.wait_for(state="visible", timeout=timeout)
             return True
@@ -152,6 +132,36 @@ class BasePage:
             return False
         except Exception:  # noqa: BLE001
             return False
+
+    def save_download(self, download, prefix: str = "download") -> tuple[str, str]:
+        """Save a Playwright Download to Config.DOWNLOADS_DIR and return (filename, saved_path)."""
+        import datetime as _dt
+        filename = download.suggested_filename or f"{prefix}.bin"
+        ts = _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+        dest = Config.DOWNLOADS_DIR / f"{ts}_{filename}"
+        download.save_as(str(dest))
+        return filename, str(dest)
+
+    @staticmethod
+    def allure_attach_file(saved_path: str, filename: str) -> None:
+        """Attach a saved download file to the Allure report. Never raises."""
+        try:
+            import allure as _allure
+            ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+            _EXT_MAP = {
+                "csv": _allure.attachment_type.CSV,
+                "pdf": _allure.attachment_type.PDF,
+                "txt": _allure.attachment_type.TEXT,
+                "json": _allure.attachment_type.JSON,
+                "xml": _allure.attachment_type.XML,
+                "html": _allure.attachment_type.HTML,
+            }
+            att_type = _EXT_MAP.get(ext, _allure.attachment_type.TEXT)
+            with open(saved_path, "rb") as fh:
+                data = fh.read()
+            _allure.attach(data, name=filename, attachment_type=att_type)
+        except Exception:  # noqa: BLE001
+            pass
 
     def text_of(self, locator: Locator) -> str:
         try:
@@ -162,28 +172,62 @@ class BasePage:
         except Exception:  # noqa: BLE001
             return ""
 
-    # ------------------------------------------------------- Modal / Overlay
     def dismiss_ask_auto_popup(self, timeout: int = 3_000) -> bool:
-        """Hide the Ask Auto popup if it is still visible.
-
-        The init-script suppressor handles most cases automatically.  This
-        method is a fallback for popups that appear between the suppressor's
-        400 ms polling intervals.
-
-        Uses JavaScript to hide the element — never Escape — so other open
-        panels (Configure drawer, Filter panel) are not accidentally closed.
-        """
         try:
             hidden = self.page.evaluate("""
                 () => {
+                    var PHRASE = 'What can I help with';
                     var found = false;
-                    document.querySelectorAll('[role="dialog"]').forEach(function(d) {
-                        if (d.textContent && d.textContent.includes('What can I help with')) {
+
+                    // Pass 1: specific selectors (safe — won't match page containers)
+                    var specific = [
+                        '[role="dialog"]',
+                        '[class*="ask-auto"]',
+                        '[class*="chat-popup"]',
+                        '[class*="AskAuto"]',
+                        '[class*="assistant-popup"]',
+                        '[class*="ai-popup"]',
+                        '[class*="floating"]'
+                    ].join(',');
+                    document.querySelectorAll(specific).forEach(function(d) {
+                        if (d.textContent && d.textContent.includes(PHRASE)) {
                             d.style.cssText += ';display:none!important;pointer-events:none!important;';
                             d.setAttribute('aria-hidden', 'true');
                             found = true;
                         }
                     });
+
+                    // Pass 2: fallback — find the SMALLEST element containing the phrase.
+                    // Skips anything > 70% of the viewport to avoid hiding the whole page.
+                    if (!found) {
+                        var vpArea = window.innerWidth * window.innerHeight;
+                        var best = null;
+                        var bestArea = Infinity;
+                        document.querySelectorAll('div, section, aside').forEach(function(d) {
+                            if (!d.textContent || !d.textContent.includes(PHRASE)) return;
+                            var r = d.getBoundingClientRect();
+                            var area = r.width * r.height;
+                            if (area < vpArea * 0.7 && area < bestArea) {
+                                bestArea = area;
+                                best = d;
+                            }
+                        });
+                        if (best) {
+                            best.style.cssText += ';display:none!important;pointer-events:none!important;';
+                            best.setAttribute('aria-hidden', 'true');
+                            found = true;
+                        }
+                    }
+
+                    // CRITICAL: The Ask Auto popup sets aria-hidden="true" on #root,
+                    // which blocks all pointer events on the main app. Always restore it.
+                    var root = document.getElementById('root');
+                    if (root) root.removeAttribute('aria-hidden');
+                    // Also restore any other main containers marked aria-hidden by the popup
+                    document.querySelectorAll('body > div[aria-hidden="true"]').forEach(function(el) {
+                        el.removeAttribute('aria-hidden');
+                    });
+
                     return found;
                 }
             """)
@@ -193,7 +237,6 @@ class BasePage:
         except Exception:  # noqa: BLE001
             return False
 
-    # ----------------------------------------------------------------- Asserts
     def current_url(self) -> str:
         return self.page.url
 

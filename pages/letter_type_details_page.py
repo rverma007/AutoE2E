@@ -64,6 +64,46 @@ class LetterTypeDetailsPage(BasePage):
             "[data-testid='edit-btn']"
         ).first
 
+    @property
+    def approve_button(self):
+        return self.page.locator(
+            "button:has-text('Approve'), "
+            "button:has-text('Approve Version'), "
+            "[data-testid='approve-btn']"
+        ).first
+
+    @property
+    def reject_button(self):
+        return self.page.locator(
+            "button:has-text('Reject'), "
+            "button:has-text('Reject Version'), "
+            "[data-testid='reject-btn']"
+        ).first
+
+    @property
+    def rejection_reason_input(self):
+        return self.page.locator(
+            "textarea[placeholder*='reason' i], "
+            "textarea[placeholder*='comment' i], "
+            "textarea[name*='reason' i], "
+            "input[placeholder*='reason' i]"
+        ).first
+
+    @property
+    def confirm_reject_button(self):
+        # Last match picks the confirmatory action, not the opener
+        return self.page.locator(
+            "button:has-text('Confirm'), "
+            "button:has-text('Confirm Rejection'), "
+            "button:has-text('Submit Rejection')"
+        ).last
+
+    @property
+    def status_badge(self):
+        return self.page.locator(
+            "[class*='status'], [class*='badge'], [class*='chip'], [class*='tag']"
+        ).first
+
     def is_loaded(self, timeout: int = 20_000) -> bool:
         if self.is_visible(self._page_heading, timeout=timeout):
             # Confirm we're on a detail page (URL has more than just /letter-type)
@@ -131,3 +171,44 @@ class LetterTypeDetailsPage(BasePage):
             self.wait_for_idle()
             return True
         return False
+
+    def has_backend_error(self) -> bool:
+        """Return True when the detail page shows a server-side validation/pydantic error."""
+        err_loc = self.page.locator(
+            "text=/unexpected error/i, "
+            "text=/validation error/i, "
+            "text=/pydantic/i, "
+            "text=/Field required/i"
+        ).first
+        return self.is_visible(err_loc, timeout=3_000)
+
+    def current_status(self) -> str:
+        """Return the status badge/chip text visible on the detail page."""
+        for sel in ("[class*='status']", "[class*='badge']", "[class*='chip']", "[class*='tag']"):
+            loc = self.page.locator(sel).first
+            if self.is_visible(loc, timeout=2_000):
+                text = self.text_of(loc).strip()
+                if text:
+                    return text
+        return ""
+
+    def click_approve(self) -> bool:
+        """Click Approve. Returns True if the button was found and clicked."""
+        if not self.is_visible(self.approve_button, timeout=8_000):
+            return False
+        self.safe_click(self.approve_button, "Approve")
+        self.wait_for_idle()
+        return True
+
+    def click_reject(self, reason: str = "Automated test rejection") -> bool:
+        """Click Reject, fill reason if a textarea appears, confirm. Returns True if clicked."""
+        if not self.is_visible(self.reject_button, timeout=8_000):
+            return False
+        self.safe_click(self.reject_button, "Reject")
+        self.wait_for_idle()
+        if self.is_visible(self.rejection_reason_input, timeout=5_000):
+            self.safe_fill(self.rejection_reason_input, reason, label="rejection reason")
+        if self.is_visible(self.confirm_reject_button, timeout=5_000):
+            self.safe_click(self.confirm_reject_button, "Confirm Rejection")
+            self.wait_for_idle()
+        return True

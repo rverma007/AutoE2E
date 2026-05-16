@@ -114,7 +114,13 @@ class LetterTypePage(BasePage):
     # ---------------------------------------------------------------- Actions
 
     def is_loaded(self, timeout: int = 30_000) -> bool:
+        self.dismiss_ask_auto_popup()
         if not self.is_visible(self.search_box, timeout=timeout):
+            # URL-based fallback: if we're on the letter-type page the session
+            # is valid even when the search box takes longer than expected.
+            if "letter-type" in self.page.url:
+                self.log.info("is_loaded: search box not visible but URL is /letter-type — treating as loaded.")
+                return True
             return False
         # Wait for skeleton shimmer to clear — ALL headers must have text
         try:

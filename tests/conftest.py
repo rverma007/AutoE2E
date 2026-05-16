@@ -84,7 +84,7 @@ def auth_state(browser: Browser) -> Path:
 
     last_exc: Exception | None = None
     for attempt in range(1, 4):
-        ctx = browser.new_context(viewport=Config.viewport)
+        ctx = browser.new_context(viewport=Config.viewport, accept_downloads=True)
         pg = ctx.new_page()
         try:
             lp = LoginPage(pg)
@@ -92,11 +92,25 @@ def auth_state(browser: Browser) -> Path:
             lp.login()
 
             lt = LetterTypePage(pg)
-            if not lt.is_loaded(timeout=20_000):
+            # Dismiss the Ask Auto popup before checking page load state
+            lt.dismiss_ask_auto_popup()
+            if not lt.is_loaded(timeout=30_000):
                 lt.open_direct()
-            if lt.is_loaded(timeout=20_000):
+                lt.dismiss_ask_auto_popup()
+            if lt.is_loaded(timeout=30_000):
                 ctx.storage_state(path=str(_STORAGE_STATE))
                 log.info(f"Auth state saved -> {_STORAGE_STATE}")
+                return _STORAGE_STATE
+
+            # Fallback: if we landed on the letter-type URL the session is valid —
+            # save state even if the search box locator didn't become visible in time.
+            if "letter-type" in pg.url or "dashboard" in pg.url:
+                try:
+                    pg.wait_for_load_state("networkidle", timeout=10_000)
+                except Exception:  # noqa: BLE001
+                    pass
+                ctx.storage_state(path=str(_STORAGE_STATE))
+                log.info(f"Auth state saved (URL fallback) -> {_STORAGE_STATE}")
                 return _STORAGE_STATE
 
             log.warning(f"Auth attempt {attempt}/3: letter-type page did not load.")
@@ -116,7 +130,7 @@ def auth_state(browser: Browser) -> Path:
 # Anonymous context + page  (function-scoped, for login/env tests)
 # ---------------------------------------------------------------------------
 def _new_context(browser: Browser, *, with_storage: Path | None = None) -> BrowserContext:
-    args: Dict = {"viewport": Config.viewport}
+    args: Dict = {"viewport": Config.viewport, "accept_downloads": True}
     if Config.RECORD_VIDEO:
         args["record_video_dir"] = str(Config.VIDEOS_DIR)
     if with_storage is not None and with_storage.exists():
@@ -141,21 +155,11 @@ def page(context: BrowserContext) -> Generator[Page, None, None]:
 
 # ---------------------------------------------------------------------------
 # Authenticated context  (SESSION-scoped — created once per worker)
-#
-# Using session scope is the single biggest speed improvement:
-#   • browser context creation     : ~1–2 s  saved per test
-#   • storage_state loading        : ~1 s    saved per test
-#   • tracing.start()              : ~0.5 s  saved per test
-# With 13 authed tests that is ~30–45 s reclaimed per run.
-#
-# Trace isolation is preserved via start_chunk / stop_chunk so each test
-# still gets its own trace file even though the context is shared.
 # ---------------------------------------------------------------------------
 @pytest.fixture(scope="session")
 def authed_context(browser: Browser, auth_state: Path) -> Generator[BrowserContext, None, None]:
     ctx = _new_context(browser, with_storage=auth_state)
     if Config.RECORD_TRACE:
-        # start() once; individual tests call start_chunk/stop_chunk below.
         ctx.tracing.start(screenshots=True, snapshots=True, sources=True)
     yield ctx
     if Config.RECORD_TRACE:
@@ -171,7 +175,6 @@ def authed_context(browser: Browser, auth_state: Path) -> Generator[BrowserConte
 # ---------------------------------------------------------------------------
 @pytest.fixture()
 def authed_page(authed_context: BrowserContext, request) -> Generator[Page, None, None]:
-    # Start a new trace chunk so this test gets its own trace file
     if Config.RECORD_TRACE:
         try:
             authed_context.tracing.start_chunk()
@@ -181,12 +184,10 @@ def authed_page(authed_context: BrowserContext, request) -> Generator[Page, None
     p = authed_context.new_page()
     yield p
 
-    # ── teardown ────────────────────────────────────────────────────────────
     rep = getattr(request.node, "rep_call", None)
     failed = bool(rep and rep.failed)
     test_name = request.node.name
 
-    # Screenshot on failure
     if Config.SCREENSHOT_ON_FAILURE and failed:
         try:
             shot = Config.SCREENSHOTS_DIR / f"{test_name}_{_timestamp()}_0.png"
@@ -196,7 +197,6 @@ def authed_page(authed_context: BrowserContext, request) -> Generator[Page, None
         except Exception as exc:  # noqa: BLE001
             log.warning(f"Could not capture screenshot: {exc}")
 
-    # Stop the trace chunk — keep only on failure
     if Config.RECORD_TRACE:
         trace_path = Config.TRACES_DIR / f"authed_{test_name}_{_timestamp()}.zip"
         try:
@@ -285,6 +285,18 @@ def xml_file(tmp_path_factory) -> str:
 
 
 @pytest.fixture(scope="session")
+def xml_files() -> dict:
+    """Paths to the real XML files used for letter generation.
+    Keyed by letter-type keyword (lowercase) so the page object can auto-pick.
+    """
+    root = Path(__file__).resolve().parent.parent
+    return {
+        "ang": str(root / "test_xml" / "CA_Pega AnG (1).xml"),
+        "um":  str(root / "test_xml" / "UM-LTR-1778490508970463.xml"),
+    }
+
+
+@pytest.fixture(scope="session")
 def template_file(tmp_path_factory) -> str:
     """Minimal valid .docx created once per session."""
     fixtures_dir = tmp_path_factory.mktemp("fixtures")
@@ -330,7 +342,7 @@ def template_file(tmp_path_factory) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Anonymous context finalizer  (screenshot + trace + video on failure)
+# Anonymous context finalizer
 # ---------------------------------------------------------------------------
 def _timestamp() -> str:
     return datetime.now().strftime("%Y%m%d_%H%M%S_%f")

@@ -1,0 +1,496 @@
+<tagRoot>
+    <MemNameTitle>Mr.</MemNameTitle>
+    <MemNameFrstn>Robert</MemNameFrstn>
+    <MemNameMddln>James</MemNameMddln>
+    <MemNameLastn>Anderson</MemNameLastn>
+    <MemAddrMLine1>1234 Maple Street</MemAddrMLine1>
+    <MemAddrMLine2>Apt 5B</MemAddrMLine2>
+    <MemAddrMLine3></MemAddrMLine3>
+    <MemAddrMCity>Springfield</MemAddrMCity>
+    <MemAddrMState>IL</MemAddrMState>
+    <MemAddrMZip>62701</MemAddrMZip>
+    <MemAddrMCounty>Sangamon</MemAddrMCounty>
+    <MemAddrMCountry>USA</MemAddrMCountry>
+    <MemAddrHLine1>1234 Maple Street</MemAddrHLine1>
+    <MemAddrHLine2>Apt 5B</MemAddrHLine2>
+    <MemAddrHLine3></MemAddrHLine3>
+    <MemAddrHCity>Springfield</MemAddrHCity>
+    <MemAddrHState>IL</MemAddrHState>
+    <MemAddrHZip>62701</MemAddrHZip>
+    <MemAddrHCounty>Sangamon</MemAddrHCounty>
+    <MemAddrHCountry>USA</MemAddrHCountry>
+    <MemEmail>robert.anderson@email.com</MemEmail>
+    <MemPhon1Fax>217-555-0198</MemPhon1Fax>
+    <MemPhon1FaxExt></MemPhon1FaxExt>
+    <MemPhon1Pri>217-555-0123</MemPhon1Pri>
+    <MemPhon1PriExt></MemPhon1PriExt>
+    <MemDemoLang>English</MemDemoLang>
+    <MemDemoAge>45</MemDemoAge>
+    <MemDemoSex>M</MemDemoSex>
+    <MemDemoDtBirth>05/15/1980</MemDemoDtBirth>
+    <MemIdSfx>Jr.</MemIdSfx>
+    <MemIdSsn>123-45-6789</MemIdSsn>
+    <MemIdHicn>1AB2CD3EF45</MemIdHicn>
+    <MemIdSystem>MEM2024001</MemIdSystem>
+    <MemIdPatctrl>PAT45678</MemIdPatctrl>
+    <MemIdCaid>IL-987654321</MemIdCaid>
+    <SubNameTitle>Mr.</SubNameTitle>
+    <SubNameFrstn>Robert</SubNameFrstn>
+    <SubNameMddln>James</SubNameMddln>
+    <SubNameLastn>Anderson</SubNameLastn>
+    <SubAddrMLine1>1234 Maple Street</SubAddrMLine1>
+    <SubAddrMLine2>Apt 5B</SubAddrMLine2>
+    <SubAddrMLine3></SubAddrMLine3>
+    <SubAddrMCity>Springfield</SubAddrMCity>
+    <SubAddrMState>IL</SubAddrMState>
+    <SubAddrMZip>62701</SubAddrMZip>
+    <SubAddrMCounty>Sangamon</SubAddrMCounty>
+    <SubAddrMCountry>USA</SubAddrMCountry>
+    <SubAddrHLine1>1234 Maple Street</SubAddrHLine1>
+    <SubAddrHLine2>Apt 5B</SubAddrHLine2>
+    <SubAddrHLine3></SubAddrHLine3>
+    <SubAddrHCity>Springfield</SubAddrHCity>
+    <SubAddrHState>IL</SubAddrHState>
+    <SubAddrHZip>62701</SubAddrHZip>
+    <SubAddrHCounty>Sangamon</SubAddrHCounty>
+    <SubAddrHCountry>USA</SubAddrHCountry>
+    <SubEmail>robert.anderson@email.com</SubEmail>
+    <SubPhon1Fax>217-555-0198</SubPhon1Fax>
+    <SubPhon1FaxExt></SubPhon1FaxExt>
+    <SubPhon1Pri>217-555-0123</SubPhon1Pri>
+    <SubPhon1PriExt></SubPhon1PriExt>
+    <SubDemoLang>English</SubDemoLang>
+    <SubDemoAge>45</SubDemoAge>
+    <SubDemoSex>M</SubDemoSex>
+    <SubDemoDtBirth>05/15/1980</SubDemoDtBirth>
+    <SubId>SUB2024001</SubId>
+    <SubIdEmply>EMP-5678</SubIdEmply>
+    <SubIdSystem>SYS-SUB-001</SubIdSystem>
+    <SubIdSystemMem>SYSM-001</SubIdSystemMem>
+    <SubDtEff>01/01/2024</SubDtEff>
+    <SubDtEffOrig>01/01/2023</SubDtEffOrig>
+    <SubDtHire>06/15/2022</SubDtHire>
+    <SubEligType>Employee</SubEligType>
+    <SubEligExplDesc>Full-time employee with comprehensive coverage</SubEligExplDesc>
+    <SubEligPlanId>PPO-GOLD-2024</SubEligPlanId>
+    <SubEligProdCat>Commercial PPO</SubEligProdCat>
+    <RespersNameTitle>Mrs.</RespersNameTitle>
+    <RespersNameFrstn>Jennifer</RespersNameFrstn>
+    <RespersNameMddln>Lynn</RespersNameMddln>
+    <RespersNameLastn>Anderson</RespersNameLastn>
+    <RespersAddrMLine1>1234 Maple Street</RespersAddrMLine1>
+    <RespersAddrMLine2>Apt 5B</RespersAddrMLine2>
+    <RespersAddrMLine3></RespersAddrMLine3>
+    <RespersAddrMCity>Springfield</RespersAddrMCity>
+    <RespersAddrMState>IL</RespersAddrMState>
+    <RespersAddrMZip>62701</RespersAddrMZip>
+    <RespersAddrMCounty>Sangamon</RespersAddrMCounty>
+    <RespersAddrMCountry>USA</RespersAddrMCountry>
+    <RespersEmail>jennifer.anderson@email.com</RespersEmail>
+    <RespersPhon1Fax>217-555-0199</RespersPhon1Fax>
+    <RespersPhon1FaxExt></RespersPhon1FaxExt>
+    <RespersPhon1Pri>217-555-0124</RespersPhon1Pri>
+    <RespersPhon1PriExt></RespersPhon1PriExt>
+    <RespersDemoLang>English</RespersDemoLang>
+    <NrsaplNameTitle>Ms.</NrsaplNameTitle>
+    <NrsaplNameFrstn>Sarah</NrsaplNameFrstn>
+    <NrsaplNameMddln>Marie</NrsaplNameMddln>
+    <NrsaplNameLastn>Thompson</NrsaplNameLastn>
+    <NrsaplAddrOLine1>456 Healthcare Plaza</NrsaplAddrOLine1>
+    <NrsaplAddrOLine2>Suite 200</NrsaplAddrOLine2>
+    <NrsaplAddrOLine3></NrsaplAddrOLine3>
+    <NrsaplAddrOCity>Springfield</NrsaplAddrOCity>
+    <NrsaplAddrOState>IL</NrsaplAddrOState>
+    <NrsaplAddrOZip>62702</NrsaplAddrOZip>
+    <NrsaplAddrOCounty>Sangamon</NrsaplAddrOCounty>
+    <NrsaplAddrOCountry>USA</NrsaplAddrOCountry>
+    <NrsaplEmail>s.thompson@healthcare.com</NrsaplEmail>
+    <NrsaplPhon1Fax>217-555-0200</NrsaplPhon1Fax>
+    <NrsaplPhon1FaxExt>201</NrsaplPhon1FaxExt>
+    <NrsaplPhon1Pri>217-555-0201</NrsaplPhon1Pri>
+    <NrsaplPhon1PriExt>202</NrsaplPhon1PriExt>
+    <MeddirNameTitle>Dr.</MeddirNameTitle>
+    <MeddirNameFrstn>Michael</MeddirNameFrstn>
+    <MeddirNameMddln>David</MeddirNameMddln>
+    <MeddirNameLastn>Rodriguez</MeddirNameLastn>
+    <MeddirAddrOLine1>789 Medical Center Drive</MeddirAddrOLine1>
+    <MeddirAddrOLine2>Building A</MeddirAddrOLine2>
+    <MeddirAddrOLine3></MeddirAddrOLine3>
+    <MeddirAddrOCity>Springfield</MeddirAddrOCity>
+    <MeddirAddrOState>IL</MeddirAddrOState>
+    <MeddirAddrOZip>62703</MeddirAddrOZip>
+    <MeddirAddrOCounty>Sangamon</MeddirAddrOCounty>
+    <MeddirAddrOCountry>USA</MeddirAddrOCountry>
+    <MeddirEmail>dr.rodriguez@medicalcenter.com</MeddirEmail>
+    <MeddirPhon1Fax>217-555-0300</MeddirPhon1Fax>
+    <MeddirPhon1FaxExt>301</MeddirPhon1FaxExt>
+    <MeddirPhon1Pri>217-555-0302</MeddirPhon1Pri>
+    <MeddirPhon1PriExt>303</MeddirPhon1PriExt>
+    <MeddirDemoCert>Board Certified Internal Medicine</MeddirDemoCert>
+    <CntcNameTitle>Ms.</CntcNameTitle>
+    <CntcNameFrstn>Emily</CntcNameFrstn>
+    <CntcNameMddln>Grace</CntcNameMddln>
+    <CntcNameLastn>Williams</CntcNameLastn>
+    <CntcAddrXLine1>321 Customer Service Blvd</CntcAddrXLine1>
+    <CntcAddrXLine2>Floor 3</CntcAddrXLine2>
+    <CntcAddrXLine3></CntcAddrXLine3>
+    <CntcAddrXCity>Springfield</CntcAddrXCity>
+    <CntcAddrXState>IL</CntcAddrXState>
+    <CntcAddrXZip>62704</CntcAddrXZip>
+    <CntcAddrXCounty>Sangamon</CntcAddrXCounty>
+    <CntcAddrXCountry>USA</CntcAddrXCountry>
+    <CntcEmail>e.williams@healthplan.com</CntcEmail>
+    <CntcPhon1Fax>217-555-0400</CntcPhon1Fax>
+    <CntcPhon1FaxExt>401</CntcPhon1FaxExt>
+    <CntcPhon1Pri>217-555-0402</CntcPhon1Pri>
+    <CntcPhon1PriExt>403</CntcPhon1PriExt>
+    <CntcDemoLang>English/Spanish</CntcDemoLang>
+    <CntcId>CONT-2024-456</CntcId>
+    <GrpName>Springfield Manufacturing Inc.</GrpName>
+    <GrpNameIpa>Central Illinois IPA</GrpNameIpa>
+    <GrpAddrOLine1>1000 Industrial Parkway</GrpAddrOLine1>
+    <GrpAddrOLine2>Suite 100</GrpAddrOLine2>
+    <GrpAddrOLine3></GrpAddrOLine3>
+    <GrpAddrOCity>Springfield</GrpAddrOCity>
+    <GrpAddrOState>IL</GrpAddrOState>
+    <GrpAddrOZip>62705</GrpAddrOZip>
+    <GrpAddrOCounty>Sangamon</GrpAddrOCounty>
+    <GrpAddrOCountry>USA</GrpAddrOCountry>
+    <GrpEmail>hr@springfieldmfg.com</GrpEmail>
+    <GrpPhon1Fax>217-555-0500</GrpPhon1Fax>
+    <GrpPhon1FaxExt>501</GrpPhon1FaxExt>
+    <GrpPhon1Pri>217-555-0502</GrpPhon1Pri>
+    <GrpPhon1PriExt>503</GrpPhon1PriExt>
+    <GrpId>GRP-2024-789</GrpId>
+    <GrpIdEmply>EMP-GRP-001</GrpIdEmply>
+    <GrpIdSystem>SYS-GRP-2024</GrpIdSystem>
+    <PcpNameTitle>Dr.</PcpNameTitle>
+    <PcpNameFrstn>Amanda</PcpNameFrstn>
+    <PcpNameMddln>Elizabeth</PcpNameMddln>
+    <PcpNameLastn>Chen</PcpNameLastn>
+    <PcpAddrOLine1>567 Primary Care Center</PcpAddrOLine1>
+    <PcpAddrOLine2>Suite 300</PcpAddrOLine2>
+    <PcpAddrOLine3></PcpAddrOLine3>
+    <PcpAddrOCity>Springfield</PcpAddrOCity>
+    <PcpAddrOState>IL</PcpAddrOState>
+    <PcpAddrOZip>62706</PcpAddrOZip>
+    <PcpAddrOCounty>Sangamon</PcpAddrOCounty>
+    <PcpAddrOCountry>USA</PcpAddrOCountry>
+    <PcpAddrRLine1>567 Primary Care Center</PcpAddrRLine1>
+    <PcpAddrRLine2>Suite 300</PcpAddrRLine2>
+    <PcpAddrRLine3></PcpAddrRLine3>
+    <PcpAddrRCity>Springfield</PcpAddrRCity>
+    <PcpAddrRState>IL</PcpAddrRState>
+    <PcpAddrRZip>62706</PcpAddrRZip>
+    <PcpAddrRCounty>Sangamon</PcpAddrRCounty>
+    <PcpAddrRCountry>USA</PcpAddrRCountry>
+    <PcpEmail>dr.chen@primarycare.com</PcpEmail>
+    <PcpPhon1Fax>217-555-0600</PcpPhon1Fax>
+    <PcpPhon1FaxExt>601</PcpPhon1FaxExt>
+    <PcpPhon1Pri>217-555-0602</PcpPhon1Pri>
+    <PcpPhon1PriExt>603</PcpPhon1PriExt>
+    <PcpId>PCP-2024-123</PcpId>
+    <PcpIdNpi>1234567890</PcpIdNpi>
+    <PcpIdSystem>SYS-PCP-001</PcpIdSystem>
+    <PcpType>Family Practice</PcpType>
+    <PcpCodeRsnTerm></PcpCodeRsnTerm>
+    <PcpDtEff>01/01/2023</PcpDtEff>
+    <PcpDtTerm></PcpDtTerm>
+    <ProvrefName>Springfield Orthopedic Associates</ProvrefName>
+    <ProvrefNameTitle>Dr.</ProvrefNameTitle>
+    <ProvrefNameFrstn>James</ProvrefNameFrstn>
+    <ProvrefNameMddln>Robert</ProvrefNameMddln>
+    <ProvrefNameLastn>Mitchell</ProvrefNameLastn>
+    <ProvrefAddrOLine1>890 Specialist Lane</ProvrefAddrOLine1>
+    <ProvrefAddrOLine2>Building B</ProvrefAddrOLine2>
+    <ProvrefAddrOLine3></ProvrefAddrOLine3>
+    <ProvrefAddrOCity>Springfield</ProvrefAddrOCity>
+    <ProvrefAddrOState>IL</ProvrefAddrOState>
+    <ProvrefAddrOZip>62707</ProvrefAddrOZip>
+    <ProvrefAddrOCounty>Sangamon</ProvrefAddrOCounty>
+    <ProvrefAddrOCountry>USA</ProvrefAddrOCountry>
+    <ProvrefEmail>dr.mitchell@ortho.com</ProvrefEmail>
+    <ProvrefPhon1Fax>217-555-0700</ProvrefPhon1Fax>
+    <ProvrefPhon1FaxExt>701</ProvrefPhon1FaxExt>
+    <ProvrefPhon1Pri>217-555-0702</ProvrefPhon1Pri>
+    <ProvrefPhon1PriExt>703</ProvrefPhon1PriExt>
+    <ProvrefId>PROV-REF-456</ProvrefId>
+    <ProvrefIdNpi>9876543210</ProvrefIdNpi>
+    <ProvrefIdSystem>SYS-PREF-001</ProvrefIdSystem>
+    <ProvrefType>Orthopedic Surgery</ProvrefType>
+    <ProvrefDtEff>03/15/2024</ProvrefDtEff>
+    <ProvrefDtTerm></ProvrefDtTerm>
+    <ProvtreatName>Memorial Hospital</ProvtreatName>
+    <ProvtreatNameTitle>Dr.</ProvtreatNameTitle>
+    <ProvtreatNameFrstn>Lisa</ProvtreatNameFrstn>
+    <ProvtreatNameMddln>Ann</ProvtreatNameMddln>
+    <ProvtreatNameLastn>Parker</ProvtreatNameLastn>
+    <ProvtreatAddrOLine1>1500 Hospital Drive</ProvtreatAddrOLine1>
+    <ProvtreatAddrOLine2></ProvtreatAddrOLine2>
+    <ProvtreatAddrOLine3></ProvtreatAddrOLine3>
+    <ProvtreatAddrOCity>Springfield</ProvtreatAddrOCity>
+    <ProvtreatAddrOState>IL</ProvtreatAddrOState>
+    <ProvtreatAddrOZip>62708</ProvtreatAddrOZip>
+    <ProvtreatAddrOCounty>Sangamon</ProvtreatAddrOCounty>
+    <ProvtreatAddrOCountry>USA</ProvtreatAddrOCountry>
+    <ProvtreatEmail>dr.parker@memorialhospital.com</ProvtreatEmail>
+    <ProvtreatPhon1Fax>217-555-0800</ProvtreatPhon1Fax>
+    <ProvtreatPhon1FaxExt>801</ProvtreatPhon1FaxExt>
+    <ProvtreatPhon1Pri>217-555-0802</ProvtreatPhon1Pri>
+    <ProvtreatPhon1PriExt>803</ProvtreatPhon1PriExt>
+    <ProvtreatId>PROV-TREAT-789</ProvtreatId>
+    <ProvtreatIdNpi>1122334455</ProvtreatIdNpi>
+    <ProvtreatIdSystem>SYS-PTREAT-001</ProvtreatIdSystem>
+    <ProvtreatIdTax>36-7654321</ProvtreatIdTax>
+    <ProvtreatType>Hospital - Acute Care</ProvtreatType>
+    <ProvtreatIndctrCmsAccpt>Yes</ProvtreatIndctrCmsAccpt>
+    <ProvtreatDtEff>04/10/2024</ProvtreatDtEff>
+    <ProvtreatDtTerm></ProvtreatDtTerm>
+    <ProvsvcName>Springfield Physical Therapy</ProvsvcName>
+    <ProvsvcNameTitle>PT</ProvsvcNameTitle>
+    <ProvsvcNameFrstn>Kevin</ProvsvcNameFrstn>
+    <ProvsvcNameMddln>Paul</ProvsvcNameMddln>
+    <ProvsvcNameLastn>Johnson</ProvsvcNameLastn>
+    <ProvsvcAddrOLine1>234 Rehabilitation Road</ProvsvcAddrOLine1>
+    <ProvsvcAddrOLine2>Suite 400</ProvsvcAddrOLine2>
+    <ProvsvcAddrOLine3></ProvsvcAddrOLine3>
+    <ProvsvcAddrOCity>Springfield</ProvsvcAddrOCity>
+    <ProvsvcAddrOState>IL</ProvsvcAddrOState>
+    <ProvsvcAddrOZip>62709</ProvsvcAddrOZip>
+    <ProvsvcAddrOCounty>Sangamon</ProvsvcAddrOCounty>
+    <ProvsvcAddrOCountry>USA</ProvsvcAddrOCountry>
+    <ProvsvcAddrRLine1>234 Rehabilitation Road</ProvsvcAddrRLine1>
+    <ProvsvcAddrRLine2>Suite 400</ProvsvcAddrRLine2>
+    <ProvsvcAddrRLine3></ProvsvcAddrRLine3>
+    <ProvsvcAddrRCity>Springfield</ProvsvcAddrRCity>
+    <ProvsvcAddrRState>IL</ProvsvcAddrRState>
+    <ProvsvcAddrRZip>62709</ProvsvcAddrRZip>
+    <ProvsvcAddrRCounty>Sangamon</ProvsvcAddrRCounty>
+    <ProvsvcAddrRCountry>USA</ProvsvcAddrRCountry>
+    <ProvsvcEmail>k.johnson@rehabcenter.com</ProvsvcEmail>
+    <ProvsvcPhon1Fax>217-555-0900</ProvsvcPhon1Fax>
+    <ProvsvcPhon1FaxExt>901</ProvsvcPhon1FaxExt>
+    <ProvsvcPhon1Pri>217-555-0902</ProvsvcPhon1Pri>
+    <ProvsvcPhon1PriExt>903</ProvsvcPhon1PriExt>
+    <ProvsvcId>PROV-SVC-321</ProvsvcId>
+    <ProvsvcIdNpi>5544332211</ProvsvcIdNpi>
+    <ProvsvcIdSystem>SYS-PSVC-001</ProvsvcIdSystem>
+    <ProvsvcType>Physical Therapy</ProvsvcType>
+    <ProvsvcDtEff>05/01/2024</ProvsvcDtEff>
+    <ProvsvcDtTerm></ProvsvcDtTerm>
+    <ProvrvwName>Quality Review Associates</ProvrvwName>
+    <ProvrvwNameTitle>Dr.</ProvrvwNameTitle>
+    <ProvrvwNameFrstn>Patricia</ProvrvwNameFrstn>
+    <ProvrvwNameMddln>Marie</ProvrvwNameMddln>
+    <ProvrvwNameLastn>Davis</ProvrvwNameLastn>
+    <ProvrvwAddrOLine1>678 Review Plaza</ProvrvwAddrOLine1>
+    <ProvrvwAddrOLine2>Suite 500</ProvrvwAddrOLine2>
+    <ProvrvwAddrOLine3></ProvrvwAddrOLine3>
+    <ProvrvwAddrOCity>Springfield</ProvrvwAddrOCity>
+    <ProvrvwAddrOState>IL</ProvrvwAddrOState>
+    <ProvrvwAddrOZip>62710</ProvrvwAddrOZip>
+    <ProvrvwAddrOCounty>Sangamon</ProvrvwAddrOCounty>
+    <ProvrvwAddrOCountry>USA</ProvrvwAddrOCountry>
+    <ProvrvwEmail>dr.davis@qualityreview.com</ProvrvwEmail>
+    <ProvrvwPhon1Fax>217-555-1000</ProvrvwPhon1Fax>
+    <ProvrvwPhon1FaxExt>1001</ProvrvwPhon1FaxExt>
+    <ProvrvwPhon1Pri>217-555-1002</ProvrvwPhon1Pri>
+    <ProvrvwPhon1PriExt>1003</ProvrvwPhon1PriExt>
+    <ProvrvwDemoCert>Board Certified Medical Review</ProvrvwDemoCert>
+    <ProvrvwId>PROV-RVW-654</ProvrvwId>
+    <ProvrvwIdNpi>6677889900</ProvrvwIdNpi>
+    <ProvrvwIdSystem>SYS-PRVW-001</ProvrvwIdSystem>
+    <ProvrvwType>Medical Review</ProvrvwType>
+    <ProvrvwDtEff>01/15/2024</ProvrvwDtEff>
+    <ProvrvwDtTerm></ProvrvwDtTerm>
+    <CtrlMemProv>Member</CtrlMemProv>
+    <CtrlRcrdType>Authorization</CtrlRcrdType>
+    <CtrlAuthClaim>Yes</CtrlAuthClaim>
+    <CtrlApprPymt>Approved</CtrlApprPymt>
+    <CtrlDenyRvrsProvClaim>No</CtrlDenyRvrsProvClaim>
+    <CtrlUsePlanGrp>Yes</CtrlUsePlanGrp>
+    <CtrlSlctProvRespers>PCP</CtrlSlctProvRespers>
+    <CtrlPrgrmPlcmnt>Standard</CtrlPrgrmPlcmnt>
+    <ApplEntityAutmNmbr>AUTH-2024-5678</ApplEntityAutmNmbr>
+    <ApplNameSpclst>Dr. James Mitchell</ApplNameSpclst>
+    <ApplNameCrdntr>Emily Williams</ApplNameCrdntr>
+    <ApplId>APPL-2024-9876</ApplId>
+    <ApplIdSystem>SYS-APPL-2024</ApplIdSystem>
+    <ApplIdPdn>PDN-456789</ApplIdPdn>
+    <ApplSts>Approved</ApplSts>
+    <ApplDtRcvd>04/15/2024</ApplDtRcvd>
+    <ApplDtRcvdPdr>04/16/2024</ApplDtRcvdPdr>
+    <ApplDtGrievRcvd></ApplDtGrievRcvd>
+    <ApplDtReqAck>04/17/2024</ApplDtReqAck>
+    <ApplDtSvcStart>05/01/2024</ApplDtSvcStart>
+    <ApplDtSvcEnd>08/01/2024</ApplDtSvcEnd>
+    <ApplDenyExpl></ApplDenyExpl>
+    <ApplDenyOrig></ApplDenyOrig>
+    <ApplDenyMdfySvc></ApplDenyMdfySvc>
+    <ApplDenyRvwInd>No</ApplDenyRvwInd>
+    <ApplDenyRvwIndOrg></ApplDenyRvwIndOrg>
+    <ApplDenySvcName></ApplDenySvcName>
+    <ApplDcsnTypeTnsprsnt>Approval</ApplDcsnTypeTnsprsnt>
+    <ApplDcsnTypeTnspast>Approved</ApplDcsnTypeTnspast>
+    <ApplDcsnTypeTnsnoun>Approval</ApplDcsnTypeTnsnoun>
+    <ApplDcsnDenyExplSep></ApplDcsnDenyExplSep>
+    <ApplDcsnDenyRvrs>No</ApplDcsnDenyRvrs>
+    <ApplRslvInqryProv>217-555-0702</ApplRslvInqryProv>
+    <ApplRslvInqryProvFax>217-555-0700</ApplRslvInqryProvFax>
+    <ApplRslvReqDsptProv>N/A</ApplRslvReqDsptProv>
+    <ApplApptDlvrRx>Approved for physical therapy sessions</ApplApptDlvrRx>
+    <ApplRvwReqDt></ApplRvwReqDt>
+    <ApplRvwReqClaim>No</ApplRvwReqClaim>
+    <ApplRvwClaimAppr>N/A</ApplRvwClaimAppr>
+    <ApplRvwClaimApprPrt>N/A</ApplRvwClaimApprPrt>
+    <ApplRvwLtr>Approval Letter Sent</ApplRvwLtr>
+    <ApplPrgrmEnrlMnth>May 2024</ApplPrgrmEnrlMnth>
+    <ApplReqDcsnPlcmnt>Approved</ApplReqDcsnPlcmnt>
+    <ApplReqDspt>N/A</ApplReqDspt>
+    <ApplReqGrievRsn></ApplReqGrievRsn>
+    <ApplNtfRfi>Not Required</ApplNtfRfi>
+    <ApplNtfRgtsrspnsProv>Letter sent 04/18/2024</ApplNtfRgtsrspnsProv>
+    <ApplLtrRspn>Approval letter with authorization details provided</ApplLtrRspn>
+    <ApplQocCmpln>No complaints received</ApplQocCmpln>
+    <ClaimId>CLM-2024-147258</ClaimId>
+    <EligVerifSep>Verified</EligVerifSep>
+    <PlanName>HealthFirst PPO Gold</PlanName>
+    <PlanAddrXStateAbbv>IL</PlanAddrXStateAbbv>
+    <PlanPhon1Memsvc>1-800-555-HEALTH</PlanPhon1Memsvc>
+    <PlanId>PLAN-2024-001</PlanId>
+    <PlanLobName>Commercial</PlanLobName>
+    <PlanLobId>LOB-COMM-001</PlanLobId>
+    <BillAmtTot>$3,250.00</BillAmtTot>
+    <ApplDcsnTypeTnsprsntSP>Aprobación</ApplDcsnTypeTnsprsntSP>
+    <ApplDenyExplSP></ApplDenyExplSP>
+    <ApplDenyOrigSP></ApplDenyOrigSP>
+    <ApplDenyMdfySvcSP></ApplDenyMdfySvcSP>
+    <ApplDcsnDenyRvrsSP>No</ApplDcsnDenyRvrsSP>
+    <ApplNameSpclstSP>Dr. James Mitchell</ApplNameSpclstSP>
+    <PlaintiffFirstName>Robert</PlaintiffFirstName>
+    <PlaintiffLastName>Anderson</PlaintiffLastName>
+    <PlaintiffAddress1>1234 Maple Street, Apt 5B</PlaintiffAddress1>
+    <PlaintiffAddress2></PlaintiffAddress2>
+    <PlaintiffCity>Springfield</PlaintiffCity>
+    <PlaintiffState>IL</PlaintiffState>
+    <PlaintiffZipCode>62701</PlaintiffZipCode>
+    <ComplaintReason>Service Authorization Delay</ComplaintReason>
+    <DescriptionofIncident>Member requested clarification on physical therapy authorization timeline and coverage details.</DescriptionofIncident>
+    <RespondentSummaryofInvestigation>Review confirmed authorization was processed within required timeframe. Additional communication provided to member regarding coverage terms.</RespondentSummaryofInvestigation>
+    <ResolutionOutcome>Resolved - Member satisfied with clarification and authorization approved</ResolutionOutcome>
+    <PreventiveMeasures>Enhanced communication protocols implemented for authorization notifications</PreventiveMeasures>
+    <IDRPdAmnt>$0.00</IDRPdAmnt>
+    <CaseIssue>Authorization Timeline Clarification</CaseIssue>
+    <DecisionReason>Authorization processed within standard timeframe; additional member education provided</DecisionReason>
+    <ApplDcsnDenyRvrs>N/A</ApplDcsnDenyRvrs>
+    <CleanDate>04/18/2024</CleanDate>
+    <BillAmtPaidDtAdjClaim>05/15/2024</BillAmtPaidDtAdjClaim>
+    <ClaimIdAdjClaim>CLM-2024-147258-ADJ</ClaimIdAdjClaim>
+    <MemberOutreach1>Initial call 04/15/2024 - Message left; Follow-up 04/16/2024 - Spoke with member</MemberOutreach1>
+    <CaseTypeSubCategory>Authorization Inquiry</CaseTypeSubCategory>
+    <ResDueDate>05/15/2024</ResDueDate>
+    <ApplLtrRspn1>We have reviewed your request for physical therapy services.</ApplLtrRspn1>
+    <ApplLtrRspn2>Your authorization has been approved for 12 sessions over a 12-week period.</ApplLtrRspn2>
+    <ApplLtrRspn3>Services must be rendered by an in-network provider.</ApplLtrRspn3>
+    <ApplLtrRspn4>Your copayment is $30 per session.</ApplLtrRspn4>
+    <ApplLtrRspn5>Authorization is valid from 05/01/2024 through 08/01/2024.</ApplLtrRspn5>
+    <ApplLtrRspn6>Please contact Member Services at 1-800-555-HEALTH with questions.</ApplLtrRspn6>
+    <ApplLtrRspn7>Thank you for choosing HealthFirst PPO Gold.</ApplLtrRspn7>
+    <CallCenterRelatedMMYY>04/2024</CallCenterRelatedMMYY>
+    <MemberHoldRestrictionMMYY>None</MemberHoldRestrictionMMYY>
+    <EapbEffDate>01/01/2024</EapbEffDate>
+    <EapbPaidThroughDate>12/31/2024</EapbPaidThroughDate>
+    <EapbBalanceDue>$0.00</EapbBalanceDue>
+    <EapbBalanceDueMMYY>Current</EapbBalanceDueMMYY>
+    <UTPProvRtnAddName>Springfield Physical Therapy</UTPProvRtnAddName>
+    <UTPProvRtnAdd1>234 Rehabilitation Road, Suite 400</UTPProvRtnAdd1>
+    <UTPProvRtnAddCityStateZip>Springfield, IL 62709</UTPProvRtnAddCityStateZip>
+    <ClaimPayToProv>Springfield Physical Therapy</ClaimPayToProv>
+    <UTPProvHPName>HealthFirst Network</UTPProvHPName>
+    <UTPProvLtrRespSelection>Standard Approval</UTPProvLtrRespSelection>
+    <To>
+        <ToTitle>Mr.</ToTitle>
+        <ToFirstName>Robert</ToFirstName>
+        <ToLastName>Anderson</ToLastName>
+        <ToAddress1>1234 Maple Street</ToAddress1>
+        <ToAddress2>Apt 5B</ToAddress2>
+        <ToAddress3></ToAddress3>
+        <ToCity>Springfield</ToCity>
+        <ToState>IL</ToState>
+        <ToZip>62701</ToZip>
+        <ToCountry>USA</ToCountry>
+    </To>
+    <CourtesyCopies>
+        <CourtesyCopy>
+            <CCIdentity>
+                <OwnerId>CC-001</OwnerId>
+                <EntityType>Provider</EntityType>
+                <EntityId>PROV-SVC-321</EntityId>
+            </CCIdentity>
+            <CCTitle>PT</CCTitle>
+            <CCFirstName>Kevin</CCFirstName>
+            <CCLastName>Johnson</CCLastName>
+            <CCAddress1>234 Rehabilitation Road</CCAddress1>
+            <CCAddress2>Suite 400</CCAddress2>
+            <CCAddress3></CCAddress3>
+            <CCCity>Springfield</CCCity>
+            <CCState>IL</CCState>
+            <CCZip>62709</CCZip>
+            <CCCountry>USA</CCCountry>
+            <CCFax>217-555-0900</CCFax>
+            <CCEmail>k.johnson@rehabcenter.com</CCEmail>
+        </CourtesyCopy>
+    </CourtesyCopies>
+    <Claims>
+        <ClaimNoCount>1</ClaimNoCount>
+        <Claim>
+            <ProvrefNameFrstn>James</ProvrefNameFrstn>
+            <ProvrefNameLastn>Mitchell</ProvrefNameLastn>
+            <ProvrefAddrOLine1>890 Specialist Lane</ProvrefAddrOLine1>
+            <ProvrefAddrOLine2>Building B</ProvrefAddrOLine2>
+            <ProvrefAddrOCity>Springfield</ProvrefAddrOCity>
+            <ProvrefAddrOState>IL</ProvrefAddrOState>
+            <ProvrefAddrOZip>62707</ProvrefAddrOZip>
+            <ApplDtRcvd>04/15/2024</ApplDtRcvd>
+            <ClaimId>CLM-2024-147258</ClaimId>
+            <MemNameLastn>Anderson</MemNameLastn>
+            <MemNameFrstn>Robert</MemNameFrstn>
+            <ProvtreatName>Memorial Hospital</ProvtreatName>
+            <ApplDtSvcStart>05/01/2024</ApplDtSvcStart>
+            <ApplDtSvcEnd>08/01/2024</ApplDtSvcEnd>
+            <ApplSts>Approved</ApplSts>
+            <BillAmtTot>$3,250.00</BillAmtTot>
+            <BillAmtPaidDt>05/15/2024</BillAmtPaidDt>
+            <BillAmtPaid>$2,890.00</BillAmtPaid>
+            <ApplRslvStsAdj>Processed</ApplRslvStsAdj>
+            <ApplRslvDesc>Authorized for 12 physical therapy sessions</ApplRslvDesc>
+            <ApplRslvSts>Complete</ApplRslvSts>
+            <ApplId>APPL-2024-9876</ApplId>
+            <ServiceCode>97110</ServiceCode>
+            <NegotiatedPaidAmt>$2,890.00</NegotiatedPaidAmt>
+            <MemIdPatctrl>PAT45678</MemIdPatctrl>
+        </Claim>
+    </Claims>
+    <DataBlocks>
+        <DataBlockText>Physical therapy services authorized for post-surgical rehabilitation following orthopedic procedure. Member to complete 12 sessions over 12-week period with licensed physical therapist.</DataBlockText>
+        <MAPDCaseIssue>N/A - Commercial Plan</MAPDCaseIssue>
+        <RTEDecisionReason>Medical necessity established through physician referral and clinical documentation. Services align with evidence-based treatment protocols.</RTEDecisionReason>
+        <DataBlockDecisionReason>Authorization approved based on clinical review of medical records, physician recommendation, and alignment with plan coverage criteria.</DataBlockDecisionReason>
+    </DataBlocks>
+    <ProviderRelatedName>Springfield Physical Therapy Center</ProviderRelatedName>
+    <ProviderRelated>Kevin Johnson, PT</ProviderRelated>
+    <ClaimRenderingProvName>Kevin Johnson, PT</ClaimRenderingProvName>
+    <ApplLtrRspn>Complete authorization details provided in approval letter dated 04/18/2024</ApplLtrRspn>
+    <ApplLtrRspn1>Authorization approved for physical therapy services</ApplLtrRspn1>
+    <ApplLtrRspn3>12 sessions authorized over 12-week period</ApplLtrRspn3>
+    <ApplLtrRspn4>$30 copayment per session applies</ApplLtrRspn4>
+    <ApplLtrRspn5>Valid dates: 05/01/2024 - 08/01/2024</ApplLtrRspn5>
+    <ApplLtrRspn6>Contact Member Services: 1-800-555-HEALTH</ApplLtrRspn6>
+    <ApplLtrRspn7>Thank you for your membership</ApplLtrRspn7>
+    <TCSReference>
+        <DocumentId>DOC-2024-AUTH-5678</DocumentId>
+        <TemplateId>TMPL-AUTH-APPROVAL-001</TemplateId>
+        <TemplateRevNo>Rev 3.2</TemplateRevNo>
+        <MergeDateTime>2024-04-18T14:30:00Z</MergeDateTime>
+    </TCSReference>
+</tagRoot>

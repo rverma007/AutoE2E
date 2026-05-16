@@ -20,10 +20,8 @@ import pytest
 from pages.letter_type_details_page import LetterTypeDetailsPage
 from pages.letter_type_editor_page import LetterTypeEditorPage
 from pages.letter_type_page import LetterTypePage
-from utils.ai_agent import smart_assert
 
-
-pytestmark = [pytest.mark.sanity, pytest.mark.agentic]
+pytestmark = pytest.mark.sanity
 
 
 def _open_editor(authed_page) -> tuple[LetterTypeDetailsPage, LetterTypeEditorPage]:
@@ -33,18 +31,10 @@ def _open_editor(authed_page) -> tuple[LetterTypeDetailsPage, LetterTypeEditorPa
     editor = LetterTypeEditorPage(authed_page)
 
     listing.open_direct()
-    assert smart_assert(
-        authed_page,
-        lambda: listing.is_loaded(),
-        "Is the Letter Type listing page loaded with a search box and data table visible?",
-    ), "Letter Type listing did not load."
+    assert listing.is_loaded(), "Letter Type listing did not load."
     assert listing.row_count() > 0, "No letter type rows to click."
     details.click_first_row(listing)
-    assert smart_assert(
-        authed_page,
-        lambda: details.is_loaded(timeout=20_000),
-        "Is the Letter Type details page loaded with version info and action buttons visible?",
-    ), "Details page did not load."
+    assert details.is_loaded(timeout=20_000), "Details page did not load."
     details.click_edit()
     return details, editor
 
@@ -67,18 +57,10 @@ class TestLetterTypeEditor:
 
         with allure.step("Open Letter Type listing and navigate to first record"):
             listing.open_direct()
-            assert smart_assert(
-                authed_page,
-                lambda: listing.is_loaded(),
-                "Is the Letter Type listing page loaded with a search box and data table visible?",
-            )
+            assert listing.is_loaded(), "Letter Type listing did not load."
             assert listing.row_count() > 0, "No letter type rows available."
             details.click_first_row(listing)
-            assert smart_assert(
-                authed_page,
-                lambda: details.is_loaded(timeout=20_000),
-                "Is the Letter Type details page loaded with version info and action buttons visible?",
-            )
+            assert details.is_loaded(timeout=20_000), "Letter Type details page did not load."
 
         with allure.step("Click Edit to open the editor"):
             edit_clicked = details.click_edit()
@@ -90,11 +72,7 @@ class TestLetterTypeEditor:
             assert edit_clicked, "Edit button not visible — record may be in non-editable state."
 
         with allure.step("Assert editor container is visible"):
-            loaded = smart_assert(
-                authed_page,
-                lambda: editor.is_loaded(timeout=20_000),
-                "Is the letter type editor loaded with a text editor canvas and toolbar visible?",
-            )
+            loaded = editor.is_loaded(timeout=20_000)
             allure.attach(
                 f"Editor loaded: {loaded}\nURL: {authed_page.url}",
                 name="Editor load state",
@@ -165,11 +143,7 @@ class TestLetterTypeEditor:
                 pytest.fail(f"Could not reach editor: {exc}")
 
         with allure.step("Assert editor is loaded"):
-            assert smart_assert(
-                authed_page,
-                lambda: editor.is_loaded(timeout=15_000),
-                "Is the letter type editor loaded with a text editor canvas and toolbar visible?",
-            ), "Editor did not load."
+            assert editor.is_loaded(timeout=15_000), "Editor did not load."
 
         with allure.step("Locate Reset button"):
             reset_visible = editor.is_visible(editor.reset_button, timeout=8_000)
@@ -191,11 +165,9 @@ class TestLetterTypeEditor:
             editor.click_reset()
 
         with allure.step("Assert editor is still in a loaded state after Reset"):
-            assert smart_assert(
-                authed_page,
-                lambda: editor.is_loaded(timeout=10_000),
-                "Is the letter type editor still showing the editor canvas after the Reset action?",
-            ), "Editor lost loaded state after Reset click."
+            assert editor.is_loaded(timeout=10_000), (
+                "Editor lost loaded state after Reset click."
+            )
 
     @allure.story("Diff View")
     @allure.title("[TC_SM_021] Diff-view displays comparison correctly")
@@ -212,11 +184,7 @@ class TestLetterTypeEditor:
                 pytest.fail(f"Could not reach editor: {exc}")
 
         with allure.step("Assert editor is loaded"):
-            assert smart_assert(
-                authed_page,
-                lambda: editor.is_loaded(timeout=15_000),
-                "Is the letter type editor loaded with a text editor canvas and toolbar visible?",
-            ), "Editor did not load."
+            assert editor.is_loaded(timeout=15_000), "Editor did not load."
 
         with allure.step("Locate Diff View button"):
             diff_btn_visible = editor.is_visible(
@@ -252,11 +220,7 @@ class TestLetterTypeEditor:
                 name="Diff view state",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            assert smart_assert(
-                authed_page,
-                lambda: editor.is_diff_view_visible(timeout=10_000),
-                "Is a diff or comparison view visible showing added, removed, or changed content?",
-            ), "Diff view container did not appear after clicking Diff View."
+            assert diff_visible, "Diff view container did not appear after clicking Diff View."
 
     @allure.story("Generated Letter Render")
     @allure.title("[TC_SM_022] Generated letter preview renders correctly")
@@ -273,11 +237,7 @@ class TestLetterTypeEditor:
                 pytest.fail(f"Could not reach editor: {exc}")
 
         with allure.step("Assert editor is loaded"):
-            assert smart_assert(
-                authed_page,
-                lambda: editor.is_loaded(timeout=15_000),
-                "Is the letter type editor loaded with a text editor canvas and toolbar visible?",
-            ), "Editor did not load."
+            assert editor.is_loaded(timeout=15_000), "Editor did not load."
 
         with allure.step("Check for letter preview pane"):
             preview_visible = editor.is_preview_visible(timeout=8_000)
@@ -322,11 +282,7 @@ class TestLetterTypeEditor:
                 pytest.fail(f"Could not reach editor: {exc}")
 
         with allure.step("Assert editor is loaded"):
-            assert smart_assert(
-                authed_page,
-                lambda: editor.is_loaded(timeout=15_000),
-                "Is the letter type editor loaded with a text editor canvas and toolbar visible?",
-            ), "Editor did not load."
+            assert editor.is_loaded(timeout=15_000), "Editor did not load."
 
         with allure.step("Locate Submit for Approval button"):
             submit_visible = editor.is_submit_button_visible(timeout=8_000)

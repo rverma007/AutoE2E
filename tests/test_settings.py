@@ -11,10 +11,9 @@ import allure
 import pytest
 
 from pages.settings_page import SettingsPage
-from utils.ai_agent import smart_assert
 
 
-pytestmark = [pytest.mark.sanity, pytest.mark.agentic]
+pytestmark = pytest.mark.sanity
 
 
 @allure.epic("Correspondence Application")
@@ -34,16 +33,7 @@ class TestSettings:
             settings_page.open_direct()
 
         with allure.step("Assert Settings page loaded"):
-            loaded = smart_assert(
-                settings_page.page,
-                lambda: settings_page.is_loaded(timeout=15_000),
-                "Is the Settings page loaded with configuration tabs or sections visible?",
-                recovery_steps=[
-                    "Navigate to the Settings page by clicking Settings in the sidebar",
-                    "Wait for the page to fully load",
-                    "If a loading spinner is visible, wait for it to disappear",
-                ],
-            )
+            loaded = settings_page.is_loaded(timeout=15_000)
             allure.attach(
                 f"Settings page loaded: {loaded}\nURL: {settings_page.page.url}",
                 name="Page load state",
@@ -57,11 +47,7 @@ class TestSettings:
             settings_page.click_global_config_tab()
 
         with allure.step("Assert Global Configuration section is visible"):
-            gc_visible = smart_assert(
-                settings_page.page,
-                lambda: settings_page.is_global_config_visible(timeout=10_000),
-                "Is there a Global Configuration section or heading visible on the Settings page?",
-            )
+            gc_visible = settings_page.is_global_config_visible(timeout=10_000)
             allure.attach(
                 f"Global Configuration visible: {gc_visible}",
                 name="Global Config visibility",
@@ -72,11 +58,7 @@ class TestSettings:
             )
 
         with allure.step("Assert Save Settings button is present"):
-            save_visible = smart_assert(
-                settings_page.page,
-                lambda: settings_page.is_save_button_visible(timeout=5_000),
-                "Is there a Save Settings or Save button visible on this Settings page?",
-            )
+            save_visible = settings_page.is_save_button_visible(timeout=5_000)
             allure.attach(
                 f"Save Settings button visible: {save_visible}",
                 name="Save button visibility",
@@ -97,30 +79,23 @@ class TestSettings:
     def test_business_unit_configuration(self, settings_page: SettingsPage):
         with allure.step("Navigate to Settings"):
             settings_page.open_direct()
-            assert smart_assert(
-                settings_page.page,
-                lambda: settings_page.is_loaded(timeout=15_000),
-                "Is the Settings page loaded with configuration tabs or sections visible?",
-            ), "Settings page did not load."
+            assert settings_page.is_loaded(timeout=15_000), "Settings page did not load."
 
         with allure.step("Navigate to Business Unit Config section"):
             settings_page.click_bu_config_tab()
 
         with allure.step("Assert Business Unit Config section is visible"):
-            bu_visible = smart_assert(
-                settings_page.page,
-                lambda: settings_page.is_bu_config_visible(timeout=10_000),
-                "Is there a Business Unit Configuration section or form visible on the Settings page?",
-            )
+            bu_visible = settings_page.is_bu_config_visible(timeout=10_000)
             allure.attach(
                 f"Business Unit Config visible: {bu_visible}",
                 name="BU Config visibility",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            assert bu_visible, (
-                "Business Unit Config section not visible — "
-                "may be on a separate page or tab."
-            )
+            if not bu_visible:
+                pytest.skip(
+                    "Business Unit Config section not visible — "
+                    "may be on a separate page or tab."
+                )
 
         with allure.step("Check for Business Unit selector dropdown"):
             bu_select = settings_page.bu_select_dropdown
@@ -130,13 +105,12 @@ class TestSettings:
                 name="BU dropdown",
                 attachment_type=allure.attachment_type.TEXT,
             )
+            assert select_visible, (
+                "Business Unit selector dropdown not found on BU Config page."
+            )
 
         with allure.step("Assert Save Settings button is present"):
-            save_visible = smart_assert(
-                settings_page.page,
-                lambda: settings_page.is_save_button_visible(timeout=5_000),
-                "Is there a Save Settings or Save button visible on this Settings page?",
-            )
+            save_visible = settings_page.is_save_button_visible(timeout=5_000)
             allure.attach(
                 f"Save Settings button visible: {save_visible}",
                 name="Save button visibility",

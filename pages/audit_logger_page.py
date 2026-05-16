@@ -54,11 +54,7 @@ class AuditLoggerPage(BasePage):
 
     @property
     def download_button(self):
-        return self.page.locator(
-            "button:has-text('Download'), "
-            "button:has-text('Export'), "
-            "button[aria-label*='download' i]"
-        ).first
+        return self.page.get_by_role("button", name=re.compile(r"^Report$", re.IGNORECASE))
 
     @property
     def rows_per_page_select(self):

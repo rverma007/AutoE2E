@@ -18,10 +18,8 @@ import pytest
 
 from pages.letter_type_details_page import LetterTypeDetailsPage
 from pages.letter_type_page import LetterTypePage
-from utils.ai_agent import smart_assert
 
-
-pytestmark = [pytest.mark.sanity, pytest.mark.agentic]
+pytestmark = pytest.mark.sanity
 
 
 @allure.epic("Correspondence Application")
@@ -41,11 +39,7 @@ class TestLetterTypeDetails:
 
         with allure.step("Open Letter Type listing"):
             listing.open_direct()
-            assert smart_assert(
-                authed_page,
-                lambda: listing.is_loaded(),
-                "Is the Letter Type listing page loaded with a search box and data table visible?",
-            ), "Letter Type listing did not load."
+            assert listing.is_loaded(), "Letter Type listing did not load."
 
         with allure.step("Confirm at least one row exists"):
             row_count = listing.row_count()
@@ -62,16 +56,7 @@ class TestLetterTypeDetails:
             details.click_first_row(listing)
 
         with allure.step("Assert details page loaded"):
-            loaded = smart_assert(
-                authed_page,
-                lambda: details.is_loaded(timeout=20_000),
-                "Is the Letter Type details page loaded with version info and action buttons visible?",
-                recovery_steps=[
-                    "Wait for the page to fully load",
-                    "If a loading spinner is visible, wait for it to disappear",
-                    "Scroll down to see if the letter type detail content is below the fold",
-                ],
-            )
+            loaded = details.is_loaded(timeout=20_000)
             allure.attach(
                 f"URL after click: {authed_page.url}",
                 name="Post-click URL",
@@ -94,18 +79,10 @@ class TestLetterTypeDetails:
 
         with allure.step("Open listing and navigate to first record"):
             listing.open_direct()
-            assert smart_assert(
-                authed_page,
-                lambda: listing.is_loaded(),
-                "Is the Letter Type listing page loaded with a search box and data table visible?",
-            )
+            assert listing.is_loaded(), "Letter Type listing did not load."
             assert listing.row_count() > 0, "No rows to click."
             details.click_first_row(listing)
-            assert smart_assert(
-                authed_page,
-                lambda: details.is_loaded(timeout=20_000),
-                "Is the Letter Type details page loaded with version info and action buttons visible?",
-            )
+            assert details.is_loaded(timeout=20_000), "Letter Type details page did not load."
 
         with allure.step("Assert version dropdown / selector is visible"):
             visible = details.is_version_dropdown_visible(timeout=10_000)
@@ -114,11 +91,7 @@ class TestLetterTypeDetails:
                 name="Version selector check",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            assert smart_assert(
-                authed_page,
-                lambda: details.is_version_dropdown_visible(timeout=10_000),
-                "Is there a version dropdown or version selector visible on this letter type details page?",
-            ), "Version dropdown/selector not found on Letter Type details page."
+            assert visible, "Version dropdown/selector not found on Letter Type details page."
 
     @allure.story("Make Current")
     @allure.title("[TC_SM_015] Letter type version: Make Current")
@@ -133,18 +106,10 @@ class TestLetterTypeDetails:
 
         with allure.step("Open listing and navigate to first record"):
             listing.open_direct()
-            assert smart_assert(
-                authed_page,
-                lambda: listing.is_loaded(),
-                "Is the Letter Type listing page loaded with a search box and data table visible?",
-            )
+            assert listing.is_loaded(), "Letter Type listing did not load."
             assert listing.row_count() > 0, "No rows to click."
             details.click_first_row(listing)
-            assert smart_assert(
-                authed_page,
-                lambda: details.is_loaded(timeout=20_000),
-                "Is the Letter Type details page loaded with version info and action buttons visible?",
-            )
+            assert details.is_loaded(timeout=20_000), "Letter Type details page did not load."
 
         with allure.step("Check Make Current button visibility"):
             make_current_visible = details.is_visible(
@@ -168,11 +133,9 @@ class TestLetterTypeDetails:
             details.click_make_current()
 
         with allure.step("Assert page is still loaded after action"):
-            assert smart_assert(
-                authed_page,
-                lambda: details.is_loaded(timeout=15_000),
-                "Is the Letter Type details page still loaded after the Make Current action?",
-            ), "Page failed to recover after Make Current action."
+            assert details.is_loaded(timeout=15_000), (
+                "Page failed to recover after Make Current action."
+            )
 
     @allure.story("Generate Test Letter")
     @allure.title("[TC_SM_016] Letter type: Generate test letter with XML upload")
@@ -187,18 +150,10 @@ class TestLetterTypeDetails:
 
         with allure.step("Open listing and navigate to first record"):
             listing.open_direct()
-            assert smart_assert(
-                authed_page,
-                lambda: listing.is_loaded(),
-                "Is the Letter Type listing page loaded with a search box and data table visible?",
-            )
+            assert listing.is_loaded(), "Letter Type listing did not load."
             assert listing.row_count() > 0, "No rows to click."
             details.click_first_row(listing)
-            assert smart_assert(
-                authed_page,
-                lambda: details.is_loaded(timeout=20_000),
-                "Is the Letter Type details page loaded with version info and action buttons visible?",
-            )
+            assert details.is_loaded(timeout=20_000), "Letter Type details page did not load."
 
         with allure.step("Click Generate Test Letter"):
             opened = details.open_generate_test_letter()
@@ -250,18 +205,10 @@ class TestLetterTypeDetails:
 
         with allure.step("Open listing and navigate to first record"):
             listing.open_direct()
-            assert smart_assert(
-                authed_page,
-                lambda: listing.is_loaded(),
-                "Is the Letter Type listing page loaded with a search box and data table visible?",
-            )
+            assert listing.is_loaded(), "Letter Type listing did not load."
             assert listing.row_count() > 0, "No rows to click."
             details.click_first_row(listing)
-            assert smart_assert(
-                authed_page,
-                lambda: details.is_loaded(timeout=20_000),
-                "Is the Letter Type details page loaded with version info and action buttons visible?",
-            )
+            assert details.is_loaded(timeout=20_000), "Letter Type details page did not load."
 
         with allure.step("Check Validation Summary tab availability"):
             vs_visible = details.is_validation_summary_visible(timeout=8_000)
@@ -283,8 +230,6 @@ class TestLetterTypeDetails:
             details.click_validation_summary()
 
         with allure.step("Assert page is still loaded after clicking Validation Summary"):
-            assert smart_assert(
-                authed_page,
-                lambda: details.is_loaded(timeout=10_000),
-                "Is the Letter Type details page still loaded after clicking Validation Summary?",
-            ), "Page failed to recover after Validation Summary click."
+            assert details.is_loaded(timeout=10_000), (
+                "Page failed to recover after Validation Summary click."
+            )

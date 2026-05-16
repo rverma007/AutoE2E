@@ -1,0 +1,785 @@
+<PrintGatewayII>
+    <LMSManagementSystem>
+        <EOB>
+            <Iscapitatedmonthly>False</Iscapitatedmonthly>
+            <contOfSupplementalClaim>0</contOfSupplementalClaim>
+            <IsDeniedWithLiability>0</IsDeniedWithLiability>
+            <IsDeniedWithoutLiability>1</IsDeniedWithoutLiability>
+            <IsAppealed>0</IsAppealed>
+            <MonthlyClaimCount>1</MonthlyClaimCount>
+            <Planid>{Planid}</Planid>
+            <ReportingYearEnddate>{ReportingYearEnddate}</ReportingYearEnddate>
+            <Yrstartdate>{Yrstartdate}</Yrstartdate>
+            <txtCapitated />
+            <phonenumber>(800) 665 - 3086</phonenumber>
+            <memid>8000880266027  </memid>
+            <mntstartdate>Feb 01</mntstartdate>
+            <mntenddate>Feb 28, 2025</mntenddate>
+            <mntprovbillamount>$80668.00</mntprovbillamount>
+            <mntplapprovedamnt>$0.00</mntplapprovedamnt>
+            <mnplsharedamnt>$0.00</mnplsharedamnt>
+            <mntmembersharedamount>$0.00</mntmembersharedamount>
+            <yrenddate>Feb 28, 2025</yrenddate>
+            <MoopYear>2024</MoopYear>
+            <yrproviderbilledamount>$539536.75</yrproviderbilledamount>
+            <yrplnapprovamnt>$28596.44</yrplnapprovamnt>
+            <yrplsharedamnt>$22898.16</yrplsharedamnt>
+            <yrmembersharedamount>$5531.01</yrmembersharedamount>
+            <mnDeductionCommentIHC />
+            <mnDeductionCommentIMHC />
+            <mnDeductionCommentDefault>No se procesaron reclamaciones de pacientes hospitalizados durante February 2025</mnDeductionCommentDefault>
+            <ReportingMonthStatrDate>Jun 01</ReportingMonthStatrDate>
+            <ReportingMonthInChar>Febrero</ReportingMonthInChar>
+            <ReportingYear>2025</ReportingYear>
+            <Letter_Info>CA_MAPD</Letter_Info>
+            <Flyer_Insert_Flag>Y</Flyer_Insert_Flag>
+            <SuppClaimDetails>
+                <mnsuppProviderName>{mnsuppProviderName}</mnsuppProviderName>
+                <mnSuppClaimNumber>{mnSuppClaimNumber}</mnSuppClaimNumber>
+                <mnSuppServiceType>{mnSuppServiceType}</mnSuppServiceType>
+                <mnsuppnetworktype>{mnsuppnetworktype}</mnsuppnetworktype>
+                <SuppClaimItems>
+                    <suppservicecode>{suppservicecode}</suppservicecode>
+                    <suppclaimDescription>{suppclaimDescription}</suppclaimDescription>
+                    <suppdateofservice>{suppdateofservice}</suppdateofservice>
+                    <suppprovbillamount>{suppprovbillamount}</suppprovbillamount>
+                    <suppplanapproved>{suppplanapproved}</suppplanapproved>
+                    <supptxtdeneid>{supptxtdeneid}</supptxtdeneid>
+                    <supptxtdeneiddesc>{supptxtdeneiddesc}</supptxtdeneiddesc>
+                    <suppplansharedamt>{suppplansharedamt}</suppplansharedamt>
+                    <supptxtxcapitatedforclaim>{supptxtxcapitatedforclaim}</supptxtxcapitatedforclaim>
+                    <supptxtcopayforclaim>{supptxtcopayforclaim}</supptxtcopayforclaim>
+                    <sppmemberliabilityamount>{sppmemberliabilityamount}</sppmemberliabilityamount>
+                    <supptxtcoinsuranceforclaim>{supptxtcoinsuranceforclaim}</supptxtcoinsuranceforclaim>
+                    <supptxtpreventiveservice>{supptxtpreventiveservice}</supptxtpreventiveservice>
+                </SuppClaimItems>
+                <supptotalproviderbilledamount>{supptotalproviderbilledamount}</supptotalproviderbilledamount>
+                <supptotalplanapprovedamnt>{supptotalplanapprovedamnt}</supptotalplanapprovedamnt>
+                <supptxtdenied>{supptxtdenied}</supptxtdenied>
+                <supptxtdenieddesc>{supptxtdenieddesc}</supptxtdenieddesc>
+                <supptotalplanshared>{supptotalplanshared}</supptotalplanshared>
+                <supptxtcapitated>{supptxtcapitated}</supptxtcapitated>
+                <supptxtcopay>{supptxtcopay}</supptxtcopay>
+                <supptotalmemberliability>{supptotalmemberliability}</supptotalmemberliability>
+                <supptxtcoinsurance>{supptxtcoinsurance}</supptxtcoinsurance>
+            </SuppClaimDetails>
+            <MOOPamount>$8300.00</MOOPamount>
+            <OutofPacketAmount>$5531.01</OutofPacketAmount>
+            <ReportingMonthEndDate>Jun 30, 2025</ReportingMonthEndDate>
+            <ClaimDetails>
+                <providername>ESCONDIDO DIALYSIS</providername>
+                <claimid>25043329189    </claimid>
+                <networktype>In-Network Provider</networktype>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/03/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/05/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/07/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/10/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/12/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/14/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/17/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/19/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/21/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/23/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/26/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/28/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/30/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <totalproviderbilledamount>$74906.00</totalproviderbilledamount>
+                <totalplanapprovedamnt>$0.00</totalplanapprovedamnt>
+                <totalplanshared>$0.00</totalplanshared>
+                <totalmemberliability>$0.00</totalmemberliability>
+                <txtCapitated />
+                <txtdenied>DENEGADO</txtdenied>
+                <txtdenieddesc>(Vea a continuación para obtener información sobre sus derechos de apelación.)</txtdenieddesc>
+                <txtcopay />
+                <txtcoinsurance />
+            </ClaimDetails>
+            <ClaimDetails>
+                <providername>ESCONDIDO DIALYSIS</providername>
+                <claimid>25043329195    </claimid>
+                <networktype>In-Network Provider</networktype>
+                <ClaimItems>
+                    <claimDescription>UNLISTED DIALYSIS PROCEDURE INPATIENT/OUTPATIENT            </claimDescription>
+                    <servicecode>90999 </servicecode>
+                    <dateofservice>12/20/24</dateofservice>
+                    <provbillamount>$5762.00</provbillamount>
+                    <planapproved>$0.00</planapproved>
+                    <plansharedamt>$0.00</plansharedamt>
+                    <memberliabilityamount>$0.00</memberliabilityamount>
+                    <txtdeneid />
+                    <txtdeneiddesc />
+                    <txtxcapitatedforclaim />
+                    <txtcopayforclaim />
+                    <txtcoinsuranceforclaim />
+                    <txtpreventiveservice />
+                </ClaimItems>
+                <totalproviderbilledamount>$5762.00</totalproviderbilledamount>
+                <totalplanapprovedamnt>$0.00</totalplanapprovedamnt>
+                <totalplanshared>$0.00</totalplanshared>
+                <totalmemberliability>$0.00</totalmemberliability>
+                <txtCapitated />
+                <txtdenied>DENEGADO</txtdenied>
+                <txtdenieddesc>(Vea a continuación para obtener información sobre sus derechos de apelación.)</txtdenieddesc>
+                <txtcopay />
+                <txtcoinsurance />
+            </ClaimDetails>
+        </EOB>
+        <LMSDocuments>
+            <LMSDocumentInfo />
+            <LMSDocumentDetail>
+                <Services />
+                <Diagnoses />
+                <Procedures />
+                <ClinicalNotes />
+                <ReferralAttributes />
+                <CM>
+                    <CMSummary>
+                        <CMName>{CMName}</CMName>
+                        <CMPhone>{CMPhone}</CMPhone>
+                        <CMEmail>{CMEmail}</CMEmail>
+                        <CMNameAndCredential>{CMNameAndCredential}</CMNameAndCredential>
+                    </CMSummary>
+                </CM>
+                <Mother>
+                    <MotherSummary>
+                        <MomFirstName>{MomFirstName}</MomFirstName>
+                        <MomLastName>{MomLastName}</MomLastName>
+                        <HPIDBilling>{HPIDBilling}</HPIDBilling>
+                        <CaseGuardSubs>{CaseGuardSubs}</CaseGuardSubs>
+                        <Moms_SSN>{Moms_SSN}</Moms_SSN>
+                    </MotherSummary>
+                </Mother>
+                <Member>
+                    <MemberSummary>
+                        <MemFullName>{MemFullName}</MemFullName>
+                        <MemberFirstName>C</MemberFirstName>
+                        <MemberMiddleName />
+                        <MemberLastName>REYES LOPEZ</MemberLastName>
+                        <MemberID>{MemberID}</MemberID>
+                        <MemberMedicaidID>{MemberMedicaidID}</MemberMedicaidID>
+                        <MemberBeneficiaryID>{MemberBeneficiaryID}</MemberBeneficiaryID>
+                        <MemberName>{MemberName}</MemberName>
+                        <MemberFullName>{MemberFullName}</MemberFullName>
+                        <MemberDOB>{MemberDOB}</MemberDOB>
+                    </MemberSummary>
+                    <MemberEligibility>
+                        <Enrollments />
+                    </MemberEligibility>
+                    <MemberDemographics>
+                        <MemberAddress>
+                            <MailingAddress>
+                                <MemberAddress>{MemberAddress}</MemberAddress>
+                                <MemberAddress1>4747 TUTWILER AVE</MemberAddress1>
+                                <MemberAddress2 />
+                                <MemberCity>MEMPHIS</MemberCity>
+                                <MemberState>TN</MemberState>
+                                <MemberZip>381224736</MemberZip>
+                                <MemberZIP>{MemberZIP}</MemberZIP>
+                                <Address>{Address}</Address>
+                                <CityStateZip>{CityStateZip}</CityStateZip>
+                                <MemMailAddr1>{MemMailAddr1}</MemMailAddr1>
+                                <MemMailAddr2>{MemMailAddr2}</MemMailAddr2>
+                                <MemMailCity>{MemMailCity}</MemMailCity>
+                                <MemMailST>{MemMailST}</MemMailST>
+                                <MemMailZIP>{MemMailZIP}</MemMailZIP>
+                                <MemMailZIP12>{MemMailZIP12}</MemMailZIP12>
+                                <MemberMailingAddr1>{MemberMailingAddr1}</MemberMailingAddr1>
+                                <MemberMailingAddr2>{MemberMailingAddr2}</MemberMailingAddr2>
+                                <MemberMailingCity>{MemberMailingCity}</MemberMailingCity>
+                                <MemberMailingState>{MemberMailingState}</MemberMailingState>
+                                <MemberMailingZip>{MemberMailingZip}</MemberMailingZip>
+                            </MailingAddress>
+                        </MemberAddress>
+                    </MemberDemographics>
+                    <MemberConditions>
+                        <Condition />
+                    </MemberConditions>
+                </Member>
+                <Provider>
+                    <ProviderSummary>
+                        <ProviderFirstName>{ProviderFirstName}</ProviderFirstName>
+                        <ProviderMiddleName>{ProviderMiddleName}</ProviderMiddleName>
+                        <ProviderLastName>{ProviderLastName}</ProviderLastName>
+                        <ProviderName>{ProviderName}</ProviderName>
+                        <ProviderID>{ProviderID}</ProviderID>
+                    </ProviderSummary>
+                    <ProviderPlanRelationships>
+                        <ProviderPlanRelationship>
+                            <PCP>{PCP}</PCP>
+                        </ProviderPlanRelationship>
+                    </ProviderPlanRelationships>
+                    <ProviderDemographics>
+                        <ProviderAddress>
+                            <MailingAddress>
+                                <ProviderAddress1>{ProviderAddress1}</ProviderAddress1>
+                                <ProviderAddress2>{ProviderAddress2}</ProviderAddress2>
+                                <ProviderCity>{ProviderCity}</ProviderCity>
+                                <ProviderState>{ProviderState}</ProviderState>
+                                <ProviderZip>{ProviderZip}</ProviderZip>
+                                <ProviderAddress>{ProviderAddress}</ProviderAddress>
+                                <ProviderCityStateZip>{ProviderCityStateZip}</ProviderCityStateZip>
+                            </MailingAddress>
+                        </ProviderAddress>
+                    </ProviderDemographics>
+                </Provider>
+            </LMSDocumentDetail>
+        </LMSDocuments>
+        <UserDefinedFields>
+            <LetterDate>{LetterDate}</LetterDate>
+            <PCPPhoneNumber>{PCPPhoneNumber}</PCPPhoneNumber>
+            <enterDate>{enterDate}</enterDate>
+            <ServiceLocationAddress>{ServiceLocationAddress}</ServiceLocationAddress>
+            <Number>{Number}</Number>
+            <Workflow>{Workflow}</Workflow>
+            <SendCopyToProvider>{SendCopyToProvider}</SendCopyToProvider>
+            <NewPCPEffectiveDate>{NewPCPEffectiveDate}</NewPCPEffectiveDate>
+            <NewPCPName>{NewPCPName}</NewPCPName>
+            <NewPCPAddress1>{NewPCPAddress1}</NewPCPAddress1>
+            <NewPCPAddress2>{NewPCPAddress2}</NewPCPAddress2>
+            <NewPCPCity>{NewPCPCity}</NewPCPCity>
+            <NewPCPState>{NewPCPState}</NewPCPState>
+            <NewPCPZip>{NewPCPZip}</NewPCPZip>
+            <NewPCPPhone>{NewPCPPhone}</NewPCPPhone>
+            <PCPName>{PCPName}</PCPName>
+            <PCPAddress1>{PCPAddress1}</PCPAddress1>
+            <PCPAddress2>{PCPAddress2}</PCPAddress2>
+            <PCPCity>{PCPCity}</PCPCity>
+            <PCPState>{PCPState}</PCPState>
+            <PCPZip>{PCPZip}</PCPZip>
+            <LOB>{LOB}</LOB>
+            <PCPTermDate>{PCPTermDate}</PCPTermDate>
+            <BabyFirstName>{BabyFirstName}</BabyFirstName>
+            <BabyLastName>{BabyLastName}</BabyLastName>
+            <BabyDOB>{BabyDOB}</BabyDOB>
+            <BabySex>{BabySex}</BabySex>
+            <County>{County}</County>
+            <EffectiveDate>{EffectiveDate}</EffectiveDate>
+            <NewProviderAddress1>{NewProviderAddress1}</NewProviderAddress1>
+            <NewProviderAddress2>{NewProviderAddress2}</NewProviderAddress2>
+            <NewProviderCity>{NewProviderCity}</NewProviderCity>
+            <NewProviderState>{NewProviderState}</NewProviderState>
+            <NewProviderZip>{NewProviderZip}</NewProviderZip>
+            <NewProviderPhoneNumber>{NewProviderPhoneNumber}</NewProviderPhoneNumber>
+            <TerminationDate>{TerminationDate}</TerminationDate>
+            <EnterLetterDate>{EnterLetterDate}</EnterLetterDate>
+            <HospitalName>{HospitalName}</HospitalName>
+            <NameofSpecialist>{NameofSpecialist}</NameofSpecialist>
+            <ParentGuardianName>{ParentGuardianName}</ParentGuardianName>
+            <Extn>{Extn}</Extn>
+            <TwentyOneDaysAfterDelivery>{TwentyOneDaysAfterDelivery}</TwentyOneDaysAfterDelivery>
+            <FiftySixDaysAfterDelivery>{FiftySixDaysAfterDelivery}</FiftySixDaysAfterDelivery>
+            <SurveyDate>{SurveyDate}</SurveyDate>
+            <Name>{Name}</Name>
+            <FirstName>{FirstName}</FirstName>
+            <MiddleInitials>{MiddleInitials}</MiddleInitials>
+            <LastName>{LastName}</LastName>
+            <Address2>{Address2}</Address2>
+            <city>{city}</city>
+            <state>{state}</state>
+            <zip>{zip}</zip>
+            <TermDate>{TermDate}</TermDate>
+            <RxID>{RxID}</RxID>
+            <RxGRP>{RxGRP}</RxGRP>
+            <RxBIN>{RxBIN}</RxBIN>
+            <RxPCN>{RxPCN}</RxPCN>
+            <StmtDate>{StmtDate}</StmtDate>
+            <Date>{Date}</Date>
+            <Cancellation_Eligibility_Date>{Cancellation_Eligibility_Date}</Cancellation_Eligibility_Date>
+            <Weeks12Date>{Weeks12Date}</Weeks12Date>
+            <Months6Date>{Months6Date}</Months6Date>
+            <Description>{Description}</Description>
+            <Amount>{Amount}</Amount>
+            <Current>{Current}</Current>
+            <PastDue30>{PastDue30}</PastDue30>
+            <PastDue60>{PastDue60}</PastDue60>
+            <PastDue90>{PastDue90}</PastDue90>
+            <PastDueOver90>{PastDueOver90}</PastDueOver90>
+            <Total>{Total}</Total>
+            <AlternativePCPName1>{AlternativePCPName1}</AlternativePCPName1>
+            <AlternativePCPName2>{AlternativePCPName2}</AlternativePCPName2>
+            <AlternativePCPName3>{AlternativePCPName3}</AlternativePCPName3>
+            <AlternativePCPName4>{AlternativePCPName4}</AlternativePCPName4>
+            <AlternativePCPName5>{AlternativePCPName5}</AlternativePCPName5>
+            <AlternativePCPPhone1>{AlternativePCPPhone1}</AlternativePCPPhone1>
+            <AlternativePCPPhone2>{AlternativePCPPhone2}</AlternativePCPPhone2>
+            <AlternativePCPPhone3>{AlternativePCPPhone3}</AlternativePCPPhone3>
+            <AlternativePCPPhone4>{AlternativePCPPhone4}</AlternativePCPPhone4>
+            <AlternativePCPPhone5>{AlternativePCPPhone5}</AlternativePCPPhone5>
+            <TotalResponsibility>{TotalResponsibility}</TotalResponsibility>
+            <PremiumAmount>{PremiumAmount}</PremiumAmount>
+            <DependentName>{DependentName}</DependentName>
+            <HealthHome>{HealthHome}</HealthHome>
+            <PCPFirstName>{PCPFirstName}</PCPFirstName>
+            <PCPLastName>{PCPLastName}</PCPLastName>
+            <COBMEMST>{COBMEMST}</COBMEMST>
+            <WelcomeTeamTime>{WelcomeTeamTime}</WelcomeTeamTime>
+            <WelcomeTeamDays>{WelcomeTeamDays}</WelcomeTeamDays>
+            <TollFreeNumber>{TollFreeNumber}</TollFreeNumber>
+            <TollFreeNumberForHearingImpaired>{TollFreeNumberForHearingImpaired}</TollFreeNumberForHearingImpaired>
+            <HealthPlanNumber>{HealthPlanNumber}</HealthPlanNumber>
+            <HealthPlanAddress1>{HealthPlanAddress1}</HealthPlanAddress1>
+            <HealthPlanAddress2>{HealthPlanAddress2}</HealthPlanAddress2>
+            <HealthPlanCity>{HealthPlanCity}</HealthPlanCity>
+            <HealthPlanState>{HealthPlanState}</HealthPlanState>
+            <HealthPlanZip>{HealthPlanZip}</HealthPlanZip>
+            <DoctorName>{DoctorName}</DoctorName>
+            <DoctorPhone>{DoctorPhone}</DoctorPhone>
+            <CaseManager>{CaseManager}</CaseManager>
+            <CaseManagerPhone>{CaseManagerPhone}</CaseManagerPhone>
+            <CaseManagerExtn>{CaseManagerExtn}</CaseManagerExtn>
+            <ReturnAddressLine1>{ReturnAddressLine1}</ReturnAddressLine1>
+            <ReturnAddressLine2>{ReturnAddressLine2}</ReturnAddressLine2>
+            <ReturnAddressCity>{ReturnAddressCity}</ReturnAddressCity>
+            <ReturnAddressState>{ReturnAddressState}</ReturnAddressState>
+            <ReturnAddressZip>{ReturnAddressZip}</ReturnAddressZip>
+            <SubscriberName>{SubscriberName}</SubscriberName>
+            <SubscriberFullName>{SubscriberFullName}</SubscriberFullName>
+            <SubscriberID>{SubscriberID}</SubscriberID>
+            <MailingAddressLine1>{MailingAddressLine1}</MailingAddressLine1>
+            <MailingAddressLine2>{MailingAddressLine2}</MailingAddressLine2>
+            <MailingCity>{MailingCity}</MailingCity>
+            <MailingState>{MailingState}</MailingState>
+            <MailingZIP>{MailingZIP}</MailingZIP>
+            <Salutation>{Salutation}</Salutation>
+            <Members>{Members}</Members>
+            <ClaimID>{ClaimID}</ClaimID>
+            <MedicalGroupID>{MedicalGroupID}</MedicalGroupID>
+            <MedicalGroupName>{MedicalGroupName}</MedicalGroupName>
+            <NoticeParagraph>{NoticeParagraph}</NoticeParagraph>
+            <Lastday>{Lastday}</Lastday>
+            <ResponsiblePartyName>{ResponsiblePartyName}</ResponsiblePartyName>
+            <MemberServicePhone>{MemberServicePhone}</MemberServicePhone>
+            <PlanNameByState>{PlanNameByState}</PlanNameByState>
+            <Service1>{Service1}</Service1>
+            <Service2>{Service2}</Service2>
+            <Service3>{Service3}</Service3>
+            <Service4>{Service4}</Service4>
+            <Service5>{Service5}</Service5>
+            <Service6>{Service6}</Service6>
+            <Service7>{Service7}</Service7>
+            <Service8>{Service8}</Service8>
+            <Service9>{Service9}</Service9>
+            <Service10>{Service10}</Service10>
+            <Provider1>{Provider1}</Provider1>
+            <Provider2>{Provider2}</Provider2>
+            <Provider3>{Provider3}</Provider3>
+            <Provider4>{Provider4}</Provider4>
+            <Provider5>{Provider5}</Provider5>
+            <Provider6>{Provider6}</Provider6>
+            <Provider7>{Provider7}</Provider7>
+            <Provider8>{Provider8}</Provider8>
+            <Provider9>{Provider9}</Provider9>
+            <Provider10>{Provider10}</Provider10>
+            <ProviderID>{ProviderID}</ProviderID>
+            <NurseAdviceLineEng>{NurseAdviceLineEng}</NurseAdviceLineEng>
+            <NurseAdviceLineSpan>{NurseAdviceLineSpan}</NurseAdviceLineSpan>
+            <NurseAdviceLineDis>{NurseAdviceLineDis}</NurseAdviceLineDis>
+            <NurseAdviceLineSpanDis>{NurseAdviceLineSpanDis}</NurseAdviceLineSpanDis>
+            <Date1>{Date1}</Date1>
+            <Date2>{Date2}</Date2>
+            <Date3>{Date3}</Date3>
+            <Date4>{Date4}</Date4>
+            <Date5>{Date5}</Date5>
+            <Date6>{Date6}</Date6>
+            <Date7>{Date7}</Date7>
+            <Date8>{Date8}</Date8>
+            <Date9>{Date9}</Date9>
+            <Date10>{Date10}</Date10>
+            <Age1>{Age1}</Age1>
+            <Age2>{Age2}</Age2>
+            <Age3>{Age3}</Age3>
+            <Age4>{Age4}</Age4>
+            <Age5>{Age5}</Age5>
+            <Age6>{Age6}</Age6>
+            <Age7>{Age7}</Age7>
+            <Age8>{Age8}</Age8>
+            <Age9>{Age9}</Age9>
+            <Age10>{Age10}</Age10>
+            <GPStartDate>{GPStartDate}</GPStartDate>
+            <GPEndDate>{GPEndDate}</GPEndDate>
+            <Dependents>{Dependents}</Dependents>
+            <PlanLogo>{PlanLogo}</PlanLogo>
+            <CustomerAddress1>{CustomerAddress1}</CustomerAddress1>
+            <CustomerAddress2>{CustomerAddress2}</CustomerAddress2>
+            <CustomerAddress3>{CustomerAddress3}</CustomerAddress3>
+            <CustomerAddress4>{CustomerAddress4}</CustomerAddress4>
+            <Phone>{Phone}</Phone>
+            <CallCenterTime>{CallCenterTime}</CallCenterTime>
+            <PlanName>{PlanName}</PlanName>
+            <OldPlanName>{OldPlanName}</OldPlanName>
+            <plansponsorname>{plansponsorname}</plansponsorname>
+            <UpdatedMailingAddress1>{UpdatedMailingAddress1}</UpdatedMailingAddress1>
+            <UpdatedMailingCity>{UpdatedMailingCity}</UpdatedMailingCity>
+            <UpdatedMailingState>{UpdatedMailingState}</UpdatedMailingState>
+            <UpdatedMailingZip>{UpdatedMailingZip}</UpdatedMailingZip>
+            <DMPhoneExtension>{DMPhoneExtension}</DMPhoneExtension>
+            <DMCareManager>{DMCareManager}</DMCareManager>
+            <Request1>{Request1}</Request1>
+            <Request2>{Request2}</Request2>
+            <Request3>{Request3}</Request3>
+            <Request4>{Request4}</Request4>
+            <RFIotherReason>{RFIotherReason}</RFIotherReason>
+            <MemSvcPhone>{MemSvcPhone}</MemSvcPhone>
+            <MemberNames>{MemberNames}</MemberNames>
+            <PlanType>{PlanType}</PlanType>
+            <SHIP_Name>{SHIP_Name}</SHIP_Name>
+            <SHIP_Phone>{SHIP_Phone}</SHIP_Phone>
+            <Attachment>{Attachment}</Attachment>
+            <IsAttachment>{IsAttachment}</IsAttachment>
+            <MedDisclaimer>{MedDisclaimer}</MedDisclaimer>
+            <MedDisclaimerSP>{MedDisclaimerSP}</MedDisclaimerSP>
+            <MemberName1>{MemberName1}</MemberName1>
+            <MemberName2>{MemberName2}</MemberName2>
+            <MemberName3>{MemberName3}</MemberName3>
+            <MemberName4>{MemberName4}</MemberName4>
+            <MemberName5>{MemberName5}</MemberName5>
+            <MemberName6>{MemberName6}</MemberName6>
+            <MemberName7>{MemberName7}</MemberName7>
+            <MemberName8>{MemberName8}</MemberName8>
+            <MemberName9>{MemberName9}</MemberName9>
+            <MemberName10>{MemberName10}</MemberName10>
+            <MemberName11>{MemberName11}</MemberName11>
+            <ClaimNumber1>{ClaimNumber1}</ClaimNumber1>
+            <ClaimNumber2>{ClaimNumber2}</ClaimNumber2>
+            <ClaimNumber3>{ClaimNumber3}</ClaimNumber3>
+            <ClaimNumber4>{ClaimNumber4}</ClaimNumber4>
+            <ClaimNumber5>{ClaimNumber5}</ClaimNumber5>
+            <ClaimNumber6>{ClaimNumber6}</ClaimNumber6>
+            <ClaimNumber7>{ClaimNumber7}</ClaimNumber7>
+            <ClaimNumber8>{ClaimNumber8}</ClaimNumber8>
+            <ClaimNumber9>{ClaimNumber9}</ClaimNumber9>
+            <ClaimNumber10>{ClaimNumber10}</ClaimNumber10>
+            <ClaimNumber11>{ClaimNumber11}</ClaimNumber11>
+            <ClaimID>{ClaimID}</ClaimID>
+            <CountyContactNo>{CountyContactNo}</CountyContactNo>
+            <EnrollmentEffDate>{EnrollmentEffDate}</EnrollmentEffDate>
+            <DisenrollmentEffDate>{DisenrollmentEffDate}</DisenrollmentEffDate>
+            <FirstOfMonth>{FirstOfMonth}</FirstOfMonth>
+            <EndDate>{EndDate}</EndDate>
+            <SEPEndDate>{SEPEndDate}</SEPEndDate>
+            <CaseManager>{CaseManager}</CaseManager>
+            <CaseManagerExtn>{CaseManagerExtn}</CaseManagerExtn>
+            <StaffName>{StaffName}</StaffName>
+            <RxGroup>{RxGroup}</RxGroup>
+            <CountyContactNo>{CountyContactNo}</CountyContactNo>
+            <EnrollmentEffDate>{EnrollmentEffDate}</EnrollmentEffDate>
+            <RxGroup>{RxGroup}</RxGroup>
+            <COBInsuranceName>{COBInsuranceName}</COBInsuranceName>
+            <RenderingProviderName>{RenderingProviderName}</RenderingProviderName>
+            <PCPServiceLocation>{PCPServiceLocation}</PCPServiceLocation>
+            <MemberPhone>{MemberPhone}</MemberPhone>
+            <PCPPhone>{PCPPhone}</PCPPhone>
+            <MonthlyPrem>{MonthlyPrem}</MonthlyPrem>
+            <GenericCopay>{GenericCopay}</GenericCopay>
+            <BrandCopay>{BrandCopay}</BrandCopay>
+            <DisenrollmentDate>{DisenrollmentDate}</DisenrollmentDate>
+            <DisenrollmentEffDate>{DisenrollmentEffDate}</DisenrollmentEffDate>
+            <ProviderType>{ProviderType}</ProviderType>
+            <EffectiveMoveDate>{EffectiveMoveDate}</EffectiveMoveDate>
+            <OldPCPAddress>{OldPCPAddress}</OldPCPAddress>
+            <NewPCPAddress>{NewPCPAddress}</NewPCPAddress>
+            <EffectiveChangeDate>{EffectiveChangeDate}</EffectiveChangeDate>
+            <NewProviderName>{NewProviderName}</NewProviderName>
+            <DueDate>{DueDate}</DueDate>
+            <insertspecialneedscriteria>{insertspecialneedscriteria}</insertspecialneedscriteria>
+            <Request5>{Request5}</Request5>
+            <Request6>{Request6}</Request6>
+            <Request7>{Request7}</Request7>
+            <Request8>{Request8}</Request8>
+            <Request9>{Request9}</Request9>
+            <Request10>{Request10}</Request10>
+            <Request11>{Request11}</Request11>
+            <Request12>{Request12}</Request12>
+            <Request13>{Request13}</Request13>
+            <OldPlanName>{OldPlanName}</OldPlanName>
+            <DisLetterDate>{DisLetterDate}</DisLetterDate>
+            <NewIPA>{NewIPA}</NewIPA>
+            <IPA>{IPA}</IPA>
+            <IPA_MedicalGroup>{IPA_MedicalGroup}</IPA_MedicalGroup>
+            <new_IPA_MedicalGroup>{new_IPA_MedicalGroup}</new_IPA_MedicalGroup>
+            <NewIPA>{NewIPA}</NewIPA>
+            <IPA>{IPA}</IPA>
+            <ManagerName>{ManagerName}</ManagerName>
+            <EndDate>{EndDate}</EndDate>
+            <FirstOfMonth>{FirstOfMonth}</FirstOfMonth>
+            <MemberDOB>{MemberDOB}</MemberDOB>
+            <MemberMedicaidID>{MemberMedicaidID}</MemberMedicaidID>
+            <CIN>{CIN}</CIN>
+            <Reason>{Reason}</Reason>
+            <ReasonForRejection>{ReasonForRejection}</ReasonForRejection>
+            <IPA_MedicalGroup>{IPA_MedicalGroup}</IPA_MedicalGroup>
+            <new_IPA_MedicalGroup>{new_IPA_MedicalGroup}</new_IPA_MedicalGroup>
+            <DateOfRequest>{DateOfRequest}</DateOfRequest>
+            <ReasonForDenial>{ReasonForDenial}</ReasonForDenial>
+            <NewPCPServiceLocation>{NewPCPServiceLocation}</NewPCPServiceLocation>
+            <PlanYear>{PlanYear}</PlanYear>
+            <MedicalDeductible>{MedicalDeductible}</MedicalDeductible>
+            <PharmacyDeductible>{PharmacyDeductible}</PharmacyDeductible>
+            <AnnualOOPMax>{AnnualOOPMax}</AnnualOOPMax>
+            <FooterText>{FooterText}</FooterText>
+            <LetterState>{LetterState}</LetterState>
+            <EnrolledMembers>{EnrolledMembers}</EnrolledMembers>
+            <GracePeriodEffDate>{GracePeriodEffDate}</GracePeriodEffDate>
+            <GracePeriodTermDate>{GracePeriodTermDate}</GracePeriodTermDate>
+            <EnrolledMembers>{EnrolledMembers}</EnrolledMembers>
+            <CallCenterDay>{CallCenterDay}</CallCenterDay>
+            <StartOfGP2>{StartOfGP2}</StartOfGP2>
+            <GracePeriodMonth>{GracePeriodMonth}</GracePeriodMonth>
+            <SubscriberID>{SubscriberID}</SubscriberID>
+            <InvoiceNumber>{InvoiceNumber}</InvoiceNumber>
+            <InvoiceDate>{InvoiceDate}</InvoiceDate>
+            <vDueDate>{vDueDate}</vDueDate>
+            <ResponsibleAmount>{ResponsibleAmount}</ResponsibleAmount>
+            <TotalPremium>{TotalPremium}</TotalPremium>
+            <CallCenterDay>{CallCenterDay}</CallCenterDay>
+            <StockCode>{StockCode}</StockCode>
+            <PreviousPlan>{PreviousPlan}</PreviousPlan>
+            <CurrentPlan>{CurrentPlan}</CurrentPlan>
+            <TheValue>{TheValue}</TheValue>
+            <CoverageType>{CoverageType}</CoverageType>
+            <PlanID>QMXBP8407</PlanID>
+            <AppealByDate>{AppealByDate}</AppealByDate>
+            <IsLogo>{IsLogo}</IsLogo>
+            <NewStartDate>{NewStartDate}</NewStartDate>
+            <NewEndDate>{NewEndDate}</NewEndDate>
+            <Reason1>{Reason1}</Reason1>
+            <Reason2>{Reason2}</Reason2>
+            <Reason3>{Reason3}</Reason3>
+            <Reason4>{Reason4}</Reason4>
+            <Reason5>{Reason5}</Reason5>
+            <PolicyNumber>{PolicyNumber}</PolicyNumber>
+            <Credentials>{Credentials}</Credentials>
+            <CareManagerFName>{CareManagerFName}</CareManagerFName>
+            <CareManagerLName>{CareManagerLName}</CareManagerLName>
+            <HisHer>{HisHer}</HisHer>
+            <Rationale>{Rationale}</Rationale>
+            <PCP_Title>{PCP_Title}</PCP_Title>
+            <Statement>{Statement}</Statement>
+            <Missed_HEDIS_Services>{Missed_HEDIS_Services}</Missed_HEDIS_Services>
+            <ContactName>{ContactName}</ContactName>
+            <EnrollID>{EnrollID}</EnrollID>
+            <PolicyPlan>{PolicyPlan}</PolicyPlan>
+            <DependentDetails>{DependentDetails}</DependentDetails>
+            <Balance>{Balance}</Balance>
+            <PaymentDate>{PaymentDate}</PaymentDate>
+            <PaymentType>{PaymentType}</PaymentType>
+            <PrevPaymentRec>{PrevPaymentRec}</PrevPaymentRec>
+            <vSenderName>{vSenderName}</vSenderName>
+            <vSenderAddr1>{vSenderAddr1}</vSenderAddr1>
+            <vSenderAddr2>{vSenderAddr2}</vSenderAddr2>
+            <vSenderPhone>{vSenderPhone}</vSenderPhone>
+            <CallCenterTime>{CallCenterTime}</CallCenterTime>
+            <vSenderPhone>{vSenderPhone}</vSenderPhone>
+            <vContact>{vContact}</vContact>
+            <vDueDate>{vDueDate}</vDueDate>
+            <vDoNotPay>{vDoNotPay}</vDoNotPay>
+            <vOCRNumber>{vOCRNumber}</vOCRNumber>
+            <StmtDate>{StmtDate}</StmtDate>
+            <Date>{Date}</Date>
+            <Description>{Description}</Description>
+            <Amount>{Amount}</Amount>
+            <Current>{Current}</Current>
+            <PastDue30>{PastDue30}</PastDue30>
+            <PastDue60>{PastDue60}</PastDue60>
+            <PastDue90>{PastDue90}</PastDue90>
+            <PastDueOver90>{PastDueOver90}</PastDueOver90>
+            <Total>{Total}</Total>
+            <MemberPlanID>{MemberPlanID}</MemberPlanID>
+            <RxBin>{RxBin}</RxBin>
+            <HealthPlan>{HealthPlan}</HealthPlan>
+            <RejectionDate>{RejectionDate}</RejectionDate>
+        </UserDefinedFields>
+        <EmailSent />
+    </LMSManagementSystem>
+    <DataBlocks>
+        <DataBlockText>{DataBlockText}</DataBlockText>
+        <CustomData />
+    </DataBlocks>
+    <TCSReference>
+        <DocumentId>6a0e61e8-5423-4132-af4f-284fbe0e5863</DocumentId>
+        <TemplateId>EOB Part C Spanish</TemplateId>
+        <TemplateRevNo>33</TemplateRevNo>
+        <MergeDateTime>2025-11-10T17:00:15.9593799+00:00</MergeDateTime>
+    </TCSReference>
+</PrintGatewayII> 

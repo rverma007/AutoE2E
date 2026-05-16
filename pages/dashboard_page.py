@@ -136,6 +136,212 @@ class DashboardPage(BasePage):
         except Exception:  # noqa: BLE001
             return default
 
+    def row_count(self) -> int:
+        """Return the number of visible data rows in the dashboard table."""
+        return self.page.locator("table tbody tr").count()
+
+    def click_first_table_row(self) -> bool:
+        """Click the first data row in the dashboard letter-type table.
+
+        Polls until the row has real text (not a skeleton placeholder).
+        Returns True if navigation away from /dashboard occurred.
+        """
+        import time as _t
+        row = self.page.locator("table tbody tr:first-child").first
+        if not self.is_visible(row, timeout=10_000):
+            return False
+        deadline = _t.monotonic() + 10
+        while _t.monotonic() < deadline:
+            if self.text_of(row).strip():
+                break
+            self.page.wait_for_timeout(400)
+        row.click()
+        self.wait_for_idle()
+        return "dashboard" not in self.page.url
+
+    # ── Pending-tab toolbar elements ─────────────────────────────────────────
+
+    @property
+    def pending_search_input(self):
+        return self.page.locator(
+            "input[placeholder*='Search by Letter Type' i]"
+        ).first
+
+    @property
+    def bulk_approve_button(self):
+        return self.page.get_by_role(
+            "button", name=re.compile(r"Bulk Approve", re.IGNORECASE)
+        )
+
+    @property
+    def table_refresh_button(self):
+        return self.page.get_by_role(
+            "button", name=re.compile(r"^Refresh$", re.IGNORECASE)
+        )
+
+    # ── Helpers ───────────────────────────────────────────────────────────────
+
+    def welcome_text(self) -> str:
+        """Return the welcome / greeting text visible on the dashboard."""
+        for sel in ("h1", "h2", "[class*='welcome']", "[class*='greeting']"):
+            loc = self.page.locator(sel).first
+            if self.is_visible(loc, timeout=2_000):
+                text = self.text_of(loc).strip()
+                if text:
+                    return text
+        return ""
+
+    def pending_tab_column_headers(self) -> list:
+        """Return non-empty column header texts from the visible table."""
+        headers = self.page.locator("table thead th")
+        count = headers.count()
+        return [
+            self.text_of(headers.nth(i)).strip()
+            for i in range(count)
+            if self.text_of(headers.nth(i)).strip()
+        ]
+
+    def search_pending_tab(self, query: str) -> None:
+        """Type a query into the pending-tab search box and wait for results."""
+        self.safe_fill(self.pending_search_input, query, label="pending tab search")
+        self.wait_for_idle()
+
+    def clear_pending_search(self) -> None:
+        if self.is_visible(self.pending_search_input, timeout=3_000):
+            self.pending_search_input.fill("")
+            self.wait_for_idle()
+
+    # ── User menu / role ──────────────────────────────────────────────────────
+
+    @property
+    def _user_menu_trigger(self):
+        # Top-right "SB Sapna Bhatt ↓" button
+        return self.page.locator(
+            "[class*='avatar'], "
+            "button[class*='user'], "
+            "button[aria-label*='account' i], "
+            "header button:last-of-type"
+        ).last
+
+    def get_current_role(self) -> str:
+        """Open the user-profile dropdown and return the active role text.
+
+        The active role is the item shown directly below the user's name
+        (underlined / highlighted in the screenshot).  The menu is closed
+        afterwards via Escape.
+        """
+        if not self.is_visible(self._user_menu_trigger, timeout=5_000):
+            return ""
+        self.safe_click(self._user_menu_trigger, "user menu")
+        self.page.wait_for_timeout(400)
+        # Try common patterns for the role line inside the dropdown
+        for sel in [
+            "[role='menu'] p:nth-child(2)",
+            "[role='menu'] span:nth-child(2)",
+            "[class*='popover'] p:nth-child(2)",
+            "[class*='dropdown'] p:nth-child(2)",
+            "[class*='menu-item']:first-child + *",
+        ]:
+            loc = self.page.locator(sel).first
+            if self.is_visible(loc, timeout=800):
+                text = self.text_of(loc).strip()
+                if text:
+                    self.page.keyboard.press("Escape")
+                    return text
+        # Fallback: scan all menu items for known role names
+        for role in ("Cac Admin", "Cac Manager", "Cac Approver", "Cac Editor"):
+            loc = self.page.get_by_role("menuitem", name=role).first
+            if self.is_visible(loc, timeout=500):
+                # Cannot distinguish current vs others this way — return empty
+                break
+        self.page.keyboard.press("Escape")
+        return ""
+
+    def ensure_role(self, role_name: str) -> bool:
+        """Switch to `role_name` if it is not already active.
+
+        Returns True if the role is active (was already set or successfully switched).
+        """
+        if not self.is_visible(self._user_menu_trigger, timeout=5_000):
+            return False
+        self.safe_click(self._user_menu_trigger, "user menu")
+        self.page.wait_for_timeout(400)
+        role_option = self.page.get_by_text(role_name, exact=True).first
+        if not self.is_visible(role_option, timeout=3_000):
+            self.page.keyboard.press("Escape")
+            return False
+        role_option.click()
+        self.wait_for_idle()
+        return True
+
+    # ── Pending-tab Review button ─────────────────────────────────────────────
+
+    def click_review_first_row(self) -> bool:
+        """Click the 'Review' button in the Actions column of the first pending row.
+
+        Waits until the row has real content (not skeleton), then clicks Review.
+        Returns True when the browser navigates away from the dashboard.
+        """
+        import time as _t
+        row = self.page.locator("table tbody tr:first-child").first
+        if not self.is_visible(row, timeout=10_000):
+            return False
+        deadline = _t.monotonic() + 12
+        while _t.monotonic() < deadline:
+            if self.text_of(row).strip():
+                break
+            self.page.wait_for_timeout(400)
+        review_btn = row.get_by_role(
+            "button", name=re.compile(r"^Review$", re.IGNORECASE)
+        ).first
+        if not self.is_visible(review_btn, timeout=5_000):
+            # Fallback: link-style Review
+            review_btn = row.get_by_text(
+                re.compile(r"^Review$", re.IGNORECASE)
+            ).first
+        if not self.is_visible(review_btn, timeout=3_000):
+            return False
+        self.safe_click(review_btn, "Review")
+        self.wait_for_idle()
+        return "dashboard" not in self.page.url
+
+    def click_review_for_row(self, row_index: int) -> bool:
+        """Click the 'Review' button on the row at `row_index` (0-based).
+
+        Returns True when the browser navigated away from the dashboard.
+        """
+        import time as _t
+        rows = self.page.locator("table tbody tr")
+        if rows.count() <= row_index:
+            return False
+        row = rows.nth(row_index)
+        if not self.is_visible(row, timeout=8_000):
+            return False
+        deadline = _t.monotonic() + 10
+        while _t.monotonic() < deadline:
+            if self.text_of(row).strip():
+                break
+            self.page.wait_for_timeout(400)
+        review_btn = row.get_by_role(
+            "button", name=re.compile(r"^Review$", re.IGNORECASE)
+        ).first
+        if not self.is_visible(review_btn, timeout=4_000):
+            review_btn = row.get_by_text(re.compile(r"^Review$", re.IGNORECASE)).first
+        if not self.is_visible(review_btn, timeout=3_000):
+            return False
+        self.safe_click(review_btn, f"Review row {row_index}")
+        self.wait_for_idle()
+        return "dashboard" not in self.page.url
+
+    def all_card_labels_visible(self, timeout: int = 10_000) -> dict[str, bool]:
+        """Return {label: visible} for every stat card label."""
+        return {
+            label: self.is_visible(
+                self.page.get_by_text(label, exact=True).first, timeout=timeout
+            )
+            for label in self._CARD_LABELS.values()
+        }
+
     # ── API intercept helper ──────────────────────────────────────────────────
 
     def capture_status_summary(self) -> Dict[str, int]:

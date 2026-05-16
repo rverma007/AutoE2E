@@ -26,6 +26,7 @@ class ReconReportPage(BasePage):
     @property
     def download_button(self):
         return self.page.locator(
+            "button:has-text('Report'), "
             "button:has-text('Download'), "
             "button:has-text('Export'), "
             "button[aria-label*='download' i]"
@@ -46,7 +47,6 @@ class ReconReportPage(BasePage):
         return self._table_rows.count()
 
     def is_list_visible(self, timeout: int = 10_000) -> bool:
-        # Accept either a table or a graceful empty-state message
         table = self.page.locator("table").first
         empty = self.page.locator(
             "text=No records, text=No data, text=No results"

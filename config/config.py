@@ -77,6 +77,7 @@ class _ConfigSchema:
     SCREENSHOTS_DIR: Path
     VIDEOS_DIR: Path
     TRACES_DIR: Path
+    DOWNLOADS_DIR: Path
 
     @property
     def viewport(self) -> dict:
@@ -103,8 +104,9 @@ def _build_config() -> _ConfigSchema:
     screenshots_dir = PROJECT_ROOT / "screenshots"
     videos_dir = PROJECT_ROOT / "videos"
     traces_dir = PROJECT_ROOT / "traces"
+    downloads_dir = PROJECT_ROOT / "downloads"
 
-    for d in (reports_dir, screenshots_dir, videos_dir, traces_dir):
+    for d in (reports_dir, screenshots_dir, videos_dir, traces_dir, downloads_dir):
         d.mkdir(parents=True, exist_ok=True)
 
     cfg = _ConfigSchema(
@@ -128,6 +130,7 @@ def _build_config() -> _ConfigSchema:
         SCREENSHOTS_DIR=screenshots_dir,
         VIDEOS_DIR=videos_dir,
         TRACES_DIR=traces_dir,
+        DOWNLOADS_DIR=downloads_dir,
     )
     cfg.validate()
     return cfg

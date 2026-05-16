@@ -4,7 +4,7 @@ Letter Import/Export module — TC_SM_024 to TC_SM_027.
 Covers:
   TC_SM_024  Import/Export page is accessible
   TC_SM_025  Export generates a valid ZIP
-  TC_SM_026  Approved ZIP import works
+  TC_SM_026  Approved ZIP import works  [HOLD — skipped]
   TC_SM_027  Admin-only access enforced
 """
 from __future__ import annotations
@@ -13,10 +13,9 @@ import allure
 import pytest
 
 from pages.letter_import_export_page import LetterImportExportPage
-from utils.ai_agent import smart_assert
 
 
-pytestmark = [pytest.mark.sanity, pytest.mark.agentic]
+pytestmark = pytest.mark.sanity
 
 
 @allure.epic("Correspondence Application")
@@ -37,11 +36,7 @@ class TestLetterImportExport:
             page.open_direct()
 
         with allure.step("Assert page loaded"):
-            loaded = smart_assert(
-                authed_page,
-                lambda: page.is_loaded(timeout=15_000),
-                "Is the Import/Export page loaded with import and export controls visible?",
-            )
+            loaded = page.is_loaded(timeout=15_000)
             allure.attach(
                 f"Import/Export page loaded: {loaded}\nURL: {authed_page.url}",
                 name="Page load state",
@@ -63,24 +58,10 @@ class TestLetterImportExport:
 
         with allure.step("Navigate to Import/Export page"):
             page.open_direct()
-            assert smart_assert(
-                authed_page,
-                lambda: page.is_loaded(timeout=15_000),
-                "Is the Import/Export page loaded with import and export controls visible?",
-            ), "Import/Export page did not load."
+            assert page.is_loaded(timeout=15_000), "Import/Export page did not load."
 
         with allure.step("Assert Export button is present"):
-            export_visible = smart_assert(
-                authed_page,
-                lambda: page.is_export_button_visible(timeout=8_000),
-                "Is there an Export button visible on the Import/Export page?",
-                recovery_steps=[
-                    "Scroll down the page to look for an Export button",
-                    "If a modal or dialog is blocking the view, close it by pressing Escape",
-                    "Look for any tab or section labelled Export and click it",
-                    "Wait for the page to fully load before checking again",
-                ],
-            )
+            export_visible = page.is_export_button_visible(timeout=8_000)
             allure.attach(
                 f"Export button visible: {export_visible}",
                 name="Export button availability",
@@ -88,70 +69,133 @@ class TestLetterImportExport:
             )
             assert export_visible, "Export button not found on Import/Export page."
 
-        with allure.step("Click Export and wait for download"):
-            download = page.click_export()
+        with allure.step("Click Export once — listen for file download and all API responses"):
+            download_captured = False
+            api_captured = False
+            api_status = None
+            api_url = None
+            api_content_type = None
+            all_responses: list = []
 
-        with allure.step("Assert download was initiated"):
-            if download is not None:
-                filename = download.suggested_filename
+            _FILE_CONTENT_TYPES = (
+                "text/csv", "application/csv",
+                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats",
+                "application/pdf",
+                "application/zip",
+                "application/octet-stream",
+                "application/json",
+                "application/xml", "text/xml",
+            )
+            _DOWNLOAD_URL_KEYWORDS = (
+                "download", "export", "import", "letter-type", "template",
+            )
+
+            def _on_response(r) -> None:
+                try:
+                    all_responses.append(r)
+                except Exception:
+                    pass
+
+            page.page.on("response", _on_response)
+            try:
+                with page.page.expect_download(timeout=15_000) as dl_info:
+                    page.safe_click(page.export_button, "Export")
+                dl = dl_info.value
+                filename, saved_path = page.save_download(dl, "letter_export")
                 allure.attach(
-                    f"Downloaded file: {filename}",
-                    name="Export filename",
+                    f"File name : {filename}\nSaved path: {saved_path}",
+                    name="Export download details",
                     attachment_type=allure.attachment_type.TEXT,
                 )
-                assert filename, "Export triggered but suggested_filename is empty."
-                # ZIP check: filename ends with .zip or content-type is zip
+                page.allure_attach_file(saved_path, filename)
+                download_captured = True
+                assert filename, "Export triggered but filename is empty."
                 assert filename.lower().endswith((".zip", ".json", ".xml")), (
                     f"Unexpected export file extension: {filename}"
                 )
-            else:
-                allure.attach(
-                    "Export download event not captured — may use navigation/blob delivery.",
-                    name="Export note",
-                    attachment_type=allure.attachment_type.TEXT,
+            except AssertionError:
+                raise
+            except Exception:
+                try:
+                    page.page.wait_for_timeout(4_000)
+                except Exception:
+                    pass
+            finally:
+                page.page.remove_listener("response", _on_response)
+
+            if not download_captured:
+                for r in all_responses:
+                    try:
+                        if r.status not in (200, 201, 202):
+                            continue
+                        ct = (r.header_value("content-type") or "").lower()
+                        cd = r.header_value("content-disposition") or ""
+                        url_lower = r.url.lower()
+                        is_file_ct = bool(cd) or any(t in ct for t in _FILE_CONTENT_TYPES)
+                        is_download_url = any(k in url_lower for k in _DOWNLOAD_URL_KEYWORDS)
+                        if is_file_ct or is_download_url:
+                            api_status = r.status
+                            api_url = r.url
+                            api_content_type = ct
+                            api_captured = True
+                            break
+                    except Exception:
+                        pass
+
+                if not api_captured:
+                    resp_log = "\n".join(
+                        f"[{r.status}] {r.url}  ct={r.header_value('content-type') or ''}"
+                        for r in all_responses
+                    ) or "(no responses captured)"
+                    allure.attach(
+                        resp_log,
+                        name="All network responses after button click",
+                        attachment_type=allure.attachment_type.TEXT,
+                    )
+
+            allure.attach(
+                f"File download captured : {download_captured}\n"
+                f"API response captured  : {api_captured}\n"
+                f"API status             : {api_status}\n"
+                f"API content-type       : {api_content_type}\n"
+                f"API URL                : {api_url}\n"
+                f"Total responses seen   : {len(all_responses)}",
+                name="Export result",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+
+        with allure.step("Assert export was initiated"):
+            if api_captured:
+                assert api_status in (200, 201, 202), (
+                    f"Export API returned unexpected status: {api_status} — URL: {api_url}"
                 )
-                assert smart_assert(
-                    authed_page,
-                    lambda: page.is_visible(page.export_button, timeout=5_000),
-                    "Is the Export button still visible on the Import/Export page?",
-                ), "Export button missing after click — unexpected DOM error."
+            else:
+                assert download_captured, (
+                    "Export button was clicked but neither a browser file download "
+                    "nor an API response with a file content-type / content-disposition "
+                    "header was captured. Check the 'All network responses' attachment "
+                    "in the Allure report to see the actual API URL and content-type."
+                )
 
     @allure.story("Import")
     @allure.title("[TC_SM_026] Approved ZIP import works")
     @allure.severity(allure.severity_level.NORMAL)
     @allure.description(
         "Upload a valid approved ZIP and click Import. "
-        "Verify the import controls are present and accessible."
+        "This test case is currently on hold pending a stable approved ZIP artifact."
     )
+    @pytest.mark.skip(reason="TC_SM_026 — On hold: requires a pre-approved ZIP artifact.")
     def test_approved_zip_import(self, authed_page):
         page = LetterImportExportPage(authed_page)
 
         with allure.step("Navigate to Import/Export page"):
             page.open_direct()
-            assert smart_assert(
-                authed_page,
-                lambda: page.is_loaded(timeout=15_000),
-                "Is the Import/Export page loaded with import and export controls visible?",
-            )
+            assert page.is_loaded(timeout=15_000)
 
-        with allure.step("Verify import file input is accessible"):
-            input_visible = page.is_visible(page.import_zip_input, timeout=8_000)
-            btn_visible = page.is_visible(page.import_confirm_button, timeout=3_000)
-            allure.attach(
-                f"Import file input visible: {input_visible}\n"
-                f"Import button visible: {btn_visible}",
-                name="Import controls",
-                attachment_type=allure.attachment_type.TEXT,
-            )
-            if not (input_visible or btn_visible):
-                allure.attach(
-                    "Neither import file input nor Import button found — "
-                    "the Import/Export feature may not be accessible in the "
-                    "current user role or environment state.",
-                    name="Import controls note",
-                    attachment_type=allure.attachment_type.TEXT,
-                )
-                return  # pass: import feature not accessible in current state
+        # placeholder: upload_zip() and click_import() when artifact is available
+        with allure.step("Upload approved ZIP and click Import"):
+            pass  # artifact not yet available
 
     @allure.story("Access Control")
     @allure.title("[TC_SM_027] Admin-only access is enforced for restricted modules")
@@ -190,9 +234,10 @@ class TestLetterImportExport:
                 attachment_type=allure.attachment_type.TEXT,
             )
 
-            # The admin account should NOT see an access-denied banner.
-            # This assertion documents expected behaviour; adjust if running
-            # with a non-admin user.
-            assert not denied or not loaded, (
-                "Access denied banner AND page loaded simultaneously — unexpected state."
+            # The configured user (.env) is an admin — page must load and show no access-denied banner.
+            assert loaded, (
+                f"Import/Export page did not load for the configured user. URL: {current_url}"
+            )
+            assert not denied, (
+                "Access Denied banner visible — the configured user may not have admin privileges."
             )

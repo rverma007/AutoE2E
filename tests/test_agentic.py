@@ -34,11 +34,15 @@ from pages.letter_type_page import LetterTypePage
 from pages.login_page import LoginPage
 from utils.ai_agent import AIAgent, ai_find_selector, ai_verify, smart_assert
 
-pytestmark = pytest.mark.agentic
+pytestmark = [pytest.mark.sanity, pytest.mark.agentic]
 
 # Skip the whole module gracefully when no API key is configured so the
 # regular sanity suite is never blocked by a missing AI credential.
 ai_available = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+
+if not ai_available:
+    pytestmark = [pytest.mark.sanity, pytest.mark.agentic,
+                  pytest.mark.skip(reason="GEMINI_API_KEY not configured — skipping agentic tests")]
 
 
 # ---------------------------------------------------------------------------

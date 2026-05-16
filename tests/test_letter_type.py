@@ -17,10 +17,9 @@ import allure
 import pytest
 
 from pages.letter_type_page import LetterTypePage
-from utils.ai_agent import smart_assert
 
 
-pytestmark = [pytest.mark.sanity, pytest.mark.agentic]
+pytestmark = pytest.mark.sanity
 
 
 @allure.epic("Correspondence Application")
@@ -43,11 +42,9 @@ class TestLetterTypeList:
             letter_type_page.open_direct()
 
         with allure.step("Assert page is loaded"):
-            assert smart_assert(
-                letter_type_page.page,
-                lambda: letter_type_page.is_loaded(),
-                "Is the Letter Type listing page loaded with a search box and data table visible?",
-            ), "Letter Type page did not reach loaded state — search box missing."
+            assert letter_type_page.is_loaded(), (
+                "Letter Type page did not reach loaded state — search box missing."
+            )
 
         with allure.step("Assert column headers are visible"):
             headers = letter_type_page.header_texts()
@@ -56,11 +53,7 @@ class TestLetterTypeList:
                 name="Column headers",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            assert smart_assert(
-                letter_type_page.page,
-                lambda: bool(letter_type_page.header_texts()),
-                "Is there a data table with visible column headers on this page?",
-            ), "No column headers found in the Letter Type table."
+            assert headers, "No column headers found in the Letter Type table."
 
         with allure.step("Assert records are displayed or footer shows total count"):
             row_count = letter_type_page.row_count()
@@ -72,9 +65,10 @@ class TestLetterTypeList:
                 attachment_type=allure.attachment_type.TEXT,
             )
 
-            assert row_count >= 0, "row_count() raised an unexpected error."
-            if total is not None:
-                assert total >= 0, f"Footer reported negative total: {total}"
+            assert row_count > 0 or (total is not None and total > 0), (
+                f"Letter Type listing has no records. "
+                f"Visible rows: {row_count}, Footer total: {total}"
+            )
 
 
 @allure.epic("Correspondence Application")
@@ -96,11 +90,7 @@ class TestLetterTypeConfiguration:
     ):
         with allure.step("Navigate to Letter Type listing"):
             letter_type_page.open_direct()
-            assert smart_assert(
-                letter_type_page.page,
-                lambda: letter_type_page.is_loaded(),
-                "Is the Letter Type listing page loaded with a search box and data table visible?",
-            ), "Letter Type page did not load."
+            assert letter_type_page.is_loaded(), "Letter Type page did not load."
 
         with allure.step("Click 'Configure Letter Type' and upload template"):
             letter_type_page.configure_letter_type(template_file)
@@ -160,11 +150,7 @@ class TestLetterTypeFilter:
     ):
         with allure.step("Navigate to Letter Type listing"):
             letter_type_page.open_direct()
-            assert smart_assert(
-                letter_type_page.page,
-                lambda: letter_type_page.is_loaded(),
-                "Is the Letter Type listing page loaded with a search box and data table visible?",
-            ), "Letter Type page did not load."
+            assert letter_type_page.is_loaded(), "Letter Type page did not load."
 
         with allure.step("Record the unfiltered row count"):
             unfiltered_count = letter_type_page.row_count()
@@ -186,7 +172,7 @@ class TestLetterTypeFilter:
                 name="Filter count comparison",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            assert filtered_count >= 0, "row_count() raised an error after filter."
+            assert letter_type_page.is_loaded(), "Page lost loaded state after filter."
 
         with allure.step("Assert every visible row matches the applied filter status"):
             rows_text = letter_type_page.visible_row_texts(limit=20)
@@ -222,51 +208,114 @@ class TestLetterTypeDownload:
     def test_download_button_triggers_download(self, letter_type_page: LetterTypePage):
         with allure.step("Navigate to Letter Type listing"):
             letter_type_page.open_direct()
-            assert smart_assert(
-                letter_type_page.page,
-                lambda: letter_type_page.is_loaded(),
-                "Is the Letter Type listing page loaded with a search box and data table visible?",
-            ), "Letter Type page did not load."
+            assert letter_type_page.is_loaded(), "Letter Type page did not load."
 
         with allure.step("Assert Download button is visible"):
-            assert smart_assert(
-                letter_type_page.page,
-                lambda: letter_type_page.is_visible(letter_type_page.download_button, timeout=10_000),
-                "Is there a Download or Export button visible on this page?",
+            assert letter_type_page.is_visible(
+                letter_type_page.download_button, timeout=10_000
             ), "Download button not found on the Letter Type listing page."
 
-        with allure.step("Click Download and capture the download event"):
-            download = letter_type_page.download()
+        with allure.step("Click Download once — listen for file download and all API responses"):
+            download_captured = False
+            api_captured = False
+            api_status = None
+            api_url = None
+            api_content_type = None
+            all_responses: list = []
 
-        with allure.step("Assert download was triggered or button state is valid"):
-            if download is not None:
-                # Standard browser download — verify filename
-                filename = download.suggested_filename
+            _FILE_CONTENT_TYPES = (
+                "text/csv", "application/csv",
+                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats",
+                "application/pdf",
+                "application/zip",
+                "application/octet-stream",
+                "application/json",
+            )
+            _DOWNLOAD_URL_KEYWORDS = (
+                "download", "export", "generate", "letter-type", "template",
+            )
+
+            def _on_response(r) -> None:
+                try:
+                    all_responses.append(r)
+                except Exception:
+                    pass
+
+            letter_type_page.page.on("response", _on_response)
+            try:
+                with letter_type_page.page.expect_download(timeout=15_000) as dl_info:
+                    letter_type_page.safe_click(letter_type_page.download_button, "Download")
+                dl = dl_info.value
+                filename, saved_path = letter_type_page.save_download(dl, "letter_type")
                 allure.attach(
-                    f"Downloaded file: {filename}",
-                    name="Download filename",
+                    f"File name : {filename}\nSaved path: {saved_path}",
+                    name="Download details",
                     attachment_type=allure.attachment_type.TEXT,
                 )
-                assert filename, (
-                    "Download triggered but suggested_filename is empty — "
-                    "the server may not have sent a Content-Disposition header."
+                letter_type_page.allure_attach_file(saved_path, filename)
+                download_captured = True
+                assert filename, "Download triggered but filename is empty."
+            except AssertionError:
+                raise
+            except Exception:
+                try:
+                    letter_type_page.page.wait_for_timeout(4_000)
+                except Exception:
+                    pass
+            finally:
+                letter_type_page.page.remove_listener("response", _on_response)
+
+            if not download_captured:
+                for r in all_responses:
+                    try:
+                        if r.status not in (200, 201, 202):
+                            continue
+                        ct = (r.header_value("content-type") or "").lower()
+                        cd = r.header_value("content-disposition") or ""
+                        url_lower = r.url.lower()
+                        is_file_ct = bool(cd) or any(t in ct for t in _FILE_CONTENT_TYPES)
+                        is_download_url = any(k in url_lower for k in _DOWNLOAD_URL_KEYWORDS)
+                        if is_file_ct or is_download_url:
+                            api_status = r.status
+                            api_url = r.url
+                            api_content_type = ct
+                            api_captured = True
+                            break
+                    except Exception:
+                        pass
+
+                if not api_captured:
+                    resp_log = "\n".join(
+                        f"[{r.status}] {r.url}  ct={r.header_value('content-type') or ''}"
+                        for r in all_responses
+                    ) or "(no responses captured)"
+                    allure.attach(
+                        resp_log,
+                        name="All network responses after button click",
+                        attachment_type=allure.attachment_type.TEXT,
+                    )
+
+            allure.attach(
+                f"File download captured : {download_captured}\n"
+                f"API response captured  : {api_captured}\n"
+                f"API status             : {api_status}\n"
+                f"API content-type       : {api_content_type}\n"
+                f"API URL                : {api_url}\n"
+                f"Total responses seen   : {len(all_responses)}",
+                name="Download result",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+
+        with allure.step("Assert download was triggered"):
+            if api_captured:
+                assert api_status in (200, 201, 202), (
+                    f"Letter Type download API returned unexpected status: {api_status} — URL: {api_url}"
                 )
             else:
-                # Two acceptable non-fatal states:
-                #   a) Button is disabled (no eligible data / permissions) — the
-                #      button is present but the server cannot export right now.
-                #   b) File delivered via navigation/JS-blob (no Playwright
-                #      Download event captured).
-                # In both cases the Download button itself must still be visible.
-                allure.attach(
-                    "Download button is disabled or file was delivered via "
-                    "navigation/blob — no Playwright Download event captured. "
-                    "Verifying button is still present on page.",
-                    name="Download note",
-                    attachment_type=allure.attachment_type.TEXT,
+                assert download_captured, (
+                    "Download button was clicked but neither a browser file download "
+                    "nor an API response with a file content-type / content-disposition "
+                    "header was captured. Check the 'All network responses' attachment "
+                    "in the Allure report to see the actual API URL and content-type."
                 )
-                assert smart_assert(
-                    letter_type_page.page,
-                    lambda: letter_type_page.is_visible(letter_type_page.download_button, timeout=5_000),
-                    "Is the Download button still visible on the Letter Type page?",
-                ), "Download button missing after click — unexpected DOM error."
