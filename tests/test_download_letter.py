@@ -1629,11 +1629,11 @@ def test_download_files_using_ui(page):
 # No Excel file or env vars needed — all inputs come from testdata.
 # Run order: executes after test_download_files_using_ui (file order).
 # =============================================================================
-def _run_download_for_bu_and_format(page, bu_type: str, fmt: str):
+def _run_download_for_bu(page, bu_type: str):
     """
     Read ingested_letters.json, filter by bu_type (ANG or non-ANG), then for each
-    letter: navigate to listing (no BU filter), search by name, open detail, download
-    the specified format (pdf or docx), and assert file exists and is non-empty.
+    letter: open the detail page ONCE, download both PDF and DOCX from that same page,
+    then go back. Asserts both files exist and are non-empty.
     """
     all_records = _load_ingested_letters()
     if not all_records:
@@ -1650,22 +1650,17 @@ def _run_download_for_bu_and_format(page, bu_type: str, fmt: str):
     download_dir = os.path.join(DEFAULT_DOWNLOAD_ROOT, "pdf_docx_downloads")
     os.makedirs(download_dir, exist_ok=True)
 
-    fmt_lower = fmt.lower()
-    fmt_upper = fmt.upper()
-
-    # Login and navigate without any BU filter
     _login_and_open_letter_type(page)
 
     table_rows = page.locator("table tbody tr")
 
-    menu_item = page.locator(
-        "ul[role='menu'] li[role='menuitem']",
-        has_text=re.compile(rf"^\s*{re.escape(fmt_upper)}\s*$", re.I),
-    ).first
-    # Also locate PDF item to confirm menu opened (needed before DOCX click)
-    pdf_anchor = page.locator(
+    pdf_menu_item = page.locator(
         "ul[role='menu'] li[role='menuitem']",
         has_text=re.compile(r"^\s*PDF\s*$", re.I),
+    ).first
+    docx_menu_item = page.locator(
+        "ul[role='menu'] li[role='menuitem']",
+        has_text=re.compile(r"^\s*DOCX\s*$", re.I),
     ).first
 
     errors = []
@@ -1709,8 +1704,8 @@ def _run_download_for_bu_and_format(page, bu_type: str, fmt: str):
 
     def _recover():
         try:
-            if _find_back_arrow(page):
-                arrow = _find_back_arrow(page)
+            arrow = _find_back_arrow(page)
+            if arrow:
                 try:
                     arrow.click(timeout=6000)
                 except Exception:
@@ -1731,10 +1726,40 @@ def _run_download_for_bu_and_format(page, bu_type: str, fmt: str):
         except Exception:
             pass
 
+    def _open_menu_and_wait():
+        fail_if_preview_error(page)
+        _, menu_btn = _get_download_buttons(page)
+        menu_btn.wait_for(state="visible", timeout=30000)
+        menu_btn.scroll_into_view_if_needed()
+        try:
+            menu_btn.click(timeout=5000)
+        except Exception:
+            menu_btn.click(force=True, timeout=5000)
+        pdf_menu_item.wait_for(state="visible", timeout=20000)
+        page.wait_for_timeout(150)
+
+    def _download_format(menu_item, label: str, file_path: str):
+        menu_item.wait_for(state="visible", timeout=10000)
+        menu_item.scroll_into_view_if_needed()
+        with page.expect_download(timeout=120000) as dl_info:
+            for method in [
+                lambda: menu_item.click(timeout=5000),
+                lambda: menu_item.click(force=True, timeout=5000),
+                lambda: menu_item.dispatch_event("click"),
+            ]:
+                try:
+                    method(); break
+                except Exception:
+                    pass
+        dl_info.value.save_as(file_path)
+        assert os.path.exists(file_path), f"{label} not saved to disk: {file_path}"
+        assert os.path.getsize(file_path) > 0, f"{label} is empty (0 bytes): {file_path}"
+        print(f"   ✅ {label} saved: {file_path}")
+
     for rec in records:
         letter_name = rec["letter_name"].strip()
         bu = rec["bu_name"].strip()
-        print(f"\n   📝 [{bu_type} {fmt_upper}] {letter_name}")
+        print(f"\n   📝 [{bu_type}] {letter_name}")
         try:
             # Ensure on listing page
             if "/letter-type" not in (page.url or ""):
@@ -1757,7 +1782,7 @@ def _run_download_for_bu_and_format(page, bu_type: str, fmt: str):
                 pass
             _wait_row(letter_name, timeout_ms=30000)
 
-            # Open detail
+            # Open detail page ONCE
             row = table_rows.first
             pe = detect_pipeline_error_in_row(row)
             if pe:
@@ -1779,48 +1804,31 @@ def _run_download_for_bu_and_format(page, bu_type: str, fmt: str):
                 (id_cell or row).click(force=True, timeout=5000)
             _wait_for_detail_page(page, timeout_ms=20000)
 
-            # Wait for preview
-            main_btn, menu_btn = _get_download_buttons(page)
+            # Wait for preview ready
+            main_btn, _ = _get_download_buttons(page)
             wait_for_preview_ready(page, main_btn, timeout_ms=240000, fast_fail_ms=5000)
             fail_if_preview_error(page)
 
-            # Open download menu
-            menu_btn.wait_for(state="visible", timeout=30000)
-            menu_btn.scroll_into_view_if_needed()
-            try:
-                menu_btn.click(timeout=5000)
-            except Exception:
-                menu_btn.click(force=True, timeout=5000)
-            pdf_anchor.wait_for(state="visible", timeout=20000)
-            page.wait_for_timeout(150)
+            safe_name = make_safe_name(letter_name)
+            safe_bu   = make_safe_name(bu)
 
-            # Click the target format item
-            menu_item.wait_for(state="visible", timeout=10000)
-            menu_item.scroll_into_view_if_needed()
-            file_path = os.path.join(
-                download_dir,
-                f"{make_safe_name(letter_name)}_{make_safe_name(bu)}.{fmt_lower}"
+            # Download PDF
+            print("   ⬇️  Downloading PDF…")
+            _open_menu_and_wait()
+            _download_format(
+                pdf_menu_item, "PDF",
+                os.path.join(download_dir, f"{safe_name}_{safe_bu}.pdf")
             )
-            with page.expect_download(timeout=120000) as dl_info:
-                for method in [
-                    lambda: menu_item.click(timeout=5000),
-                    lambda: menu_item.click(force=True, timeout=5000),
-                    lambda: menu_item.dispatch_event("click"),
-                ]:
-                    try:
-                        method(); break
-                    except Exception:
-                        pass
-            dl_info.value.save_as(file_path)
 
-            assert os.path.exists(file_path), \
-                f"{fmt_upper} not saved to disk for '{letter_name}' (BU: {bu})"
-            assert os.path.getsize(file_path) > 0, \
-                f"{fmt_upper} is empty (0 bytes) for '{letter_name}' (BU: {bu})"
+            # Download DOCX from the SAME page (re-open menu)
+            print("   ⬇️  Downloading DOCX…")
+            _open_menu_and_wait()
+            _download_format(
+                docx_menu_item, "DOCX",
+                os.path.join(download_dir, f"{safe_name}_{safe_bu}.docx")
+            )
 
-            print(f"   ✅ {fmt_upper} saved: {file_path}")
-
-            # Go back to listing
+            # Go back to listing only after both downloads are done
             arrow = _find_back_arrow(page)
             if arrow:
                 try:
@@ -1860,33 +1868,19 @@ def _run_download_for_bu_and_format(page, bu_type: str, fmt: str):
 
     if errors:
         raise AssertionError(
-            f"[{bu_type} {fmt_upper}] {len(errors)} failure(s):\n" + "\n".join(errors)
+            f"[{bu_type}] {len(errors)} failure(s):\n" + "\n".join(errors)
         )
 
 
 @pytest.mark.sanity
-@pytest.mark.dependency(name="test_download_ang_pdf", depends=["test_letter_type_ingestion"])
-def test_download_ang_pdf(page):
-    """TC_DL_001a: ANG letter — PDF download and size > 0."""
-    _run_download_for_bu_and_format(page, bu_type="ANG", fmt="pdf")
+@pytest.mark.dependency(name="test_download_ang", depends=["test_letter_type_ingestion"])
+def test_download_ang(page):
+    """TC_DL_001a: ANG letter — download PDF and DOCX from the same detail page."""
+    _run_download_for_bu(page, bu_type="ANG")
 
 
 @pytest.mark.sanity
-@pytest.mark.dependency(name="test_download_ang_docx", depends=["test_letter_type_ingestion"])
-def test_download_ang_docx(page):
-    """TC_DL_001b: ANG letter — DOCX download and size > 0."""
-    _run_download_for_bu_and_format(page, bu_type="ANG", fmt="docx")
-
-
-@pytest.mark.sanity
-@pytest.mark.dependency(name="test_download_bu_pdf", depends=["test_letter_type_ingestion"])
-def test_download_bu_pdf(page):
-    """TC_DL_001c: BU (non-ANG) letter — PDF download and size > 0."""
-    _run_download_for_bu_and_format(page, bu_type="BU", fmt="pdf")
-
-
-@pytest.mark.sanity
-@pytest.mark.dependency(name="test_download_bu_docx", depends=["test_letter_type_ingestion"])
-def test_download_bu_docx(page):
-    """TC_DL_001d: BU (non-ANG) letter — DOCX download and size > 0."""
-    _run_download_for_bu_and_format(page, bu_type="BU", fmt="docx")
+@pytest.mark.dependency(name="test_download_bu", depends=["test_letter_type_ingestion"])
+def test_download_bu(page):
+    """TC_DL_001b: BU (non-ANG) letter — download PDF and DOCX from the same detail page."""
+    _run_download_for_bu(page, bu_type="BU")
