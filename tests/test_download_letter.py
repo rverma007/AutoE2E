@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import json
 import argparse
 import pytest
@@ -240,7 +241,7 @@ def _apply_bu_filter(page, bu_name: str):
     print(f"✅ Filter applied: Business Unit = {bu_name}")
 
 
-def _login_and_open_letter_type(page, bu_name: str = "ANG DONOT USE"):
+def _login_and_open_letter_type(page, bu_name: str = None):
     search_box = page.locator("input[placeholder='Search by Letter Type and Id']")
 
     page.goto(BASE_URL, wait_until="domcontentloaded", timeout=600000)
@@ -252,6 +253,8 @@ def _login_and_open_letter_type(page, bu_name: str = "ANG DONOT USE"):
 
     if search_box.is_visible(timeout=3000):
         print("✅ Already on Letter Type listing page.")
+        if bu_name is not None:
+            _apply_bu_filter(page, bu_name)
         return
 
     try:
@@ -289,7 +292,8 @@ def _login_and_open_letter_type(page, bu_name: str = "ANG DONOT USE"):
         )
 
     print("✅ On Letter Type listing page.")
-    _apply_bu_filter(page, bu_name)
+    if bu_name is not None:
+        _apply_bu_filter(page, bu_name)
 
 
 def _get_download_buttons(page):
@@ -1381,11 +1385,13 @@ def download_pdf_and_docx_from_testdata(page, download_root: str):
         print(f"🏢 BU: {bu}  ({len(letter_names)} letter(s))")
         print(f"{'━'*50}")
 
-        # Apply BU filter once for this group
+        # Apply BU filter once for this group (map short names to full display names)
+        _BU_FILTER_MAP = {"ANG": "ANG DONOT USE"}
+        filter_bu = _BU_FILTER_MAP.get(bu.strip().upper(), bu)
         try:
-            _apply_bu_filter(page, bu)
+            _apply_bu_filter(page, filter_bu)
         except Exception as e:
-            print(f"   ⚠️  Could not apply filter for '{bu}': {e}")
+            print(f"   ⚠️  Could not apply filter for '{filter_bu}': {e}")
 
         for letter_name in letter_names:
             result = {
@@ -1507,8 +1513,8 @@ def download_pdf_and_docx_from_testdata(page, download_root: str):
     print(f"{'='*50}\n")
 
     # ── 4 final assertions: ANG PDF · ANG DOCX · BU PDF · BU DOCX ────────
-    ang_results = [r for r in results if r["bu_name"].strip().upper() == "ANG DONOT USE"]
-    bu_results  = [r for r in results if r["bu_name"].strip().upper() != "ANG DONOT USE"]
+    ang_results = [r for r in results if "ANG" in r["bu_name"].strip().upper()]
+    bu_results  = [r for r in results if "ANG" not in r["bu_name"].strip().upper()]
 
     ang_pdf_fail  = [r["letter_name"] for r in ang_results if not r["pdf_ok"]]
     ang_docx_fail = [r["letter_name"] for r in ang_results if not r["docx_ok"]]
@@ -1612,15 +1618,264 @@ def test_download_files_using_ui(page):
 # No Excel file or env vars needed — all inputs come from testdata.
 # Run order: executes after test_download_files_using_ui (file order).
 # =============================================================================
-@pytest.mark.sanity
-def test_download_pdf_and_docx_after_ingestion(page):
+def _run_download_for_bu_and_format(page, bu_type: str, fmt: str):
     """
-    TC_DL_001: For each letter recorded during ingestion (ANG and BU), verify:
-      - assert PDF file downloaded and size > 0
-      - assert DOCX file downloaded and size > 0
-    Reads from tests/testdata/ingested_letters.json (written by test_download_files_using_ui).
+    Read ingested_letters.json, filter by bu_type (ANG or non-ANG), then for each
+    letter: navigate to listing (no BU filter), search by name, open detail, download
+    the specified format (pdf or docx), and assert file exists and is non-empty.
     """
-    download_root = os.environ.get("DOWNLOAD_ROOT", DEFAULT_DOWNLOAD_ROOT)
-    os.makedirs(download_root, exist_ok=True)
+    all_records = _load_ingested_letters()
+    if not all_records:
+        pytest.skip(f"No ingested letters found in testdata: {TESTDATA_FILE}")
+
+    if bu_type == "ANG":
+        records = [r for r in all_records if "ANG" in r["bu_name"].strip().upper()]
+    else:
+        records = [r for r in all_records if "ANG" not in r["bu_name"].strip().upper()]
+
+    if not records:
+        pytest.skip(f"No {bu_type} letters found in testdata")
+
+    download_dir = os.path.join(DEFAULT_DOWNLOAD_ROOT, "pdf_docx_downloads")
+    os.makedirs(download_dir, exist_ok=True)
+
+    fmt_lower = fmt.lower()
+    fmt_upper = fmt.upper()
+
+    # Login and navigate without any BU filter
     _login_and_open_letter_type(page)
-    download_pdf_and_docx_from_testdata(page, download_root)
+
+    table_rows = page.locator("table tbody tr")
+
+    menu_item = page.locator(
+        "ul[role='menu'] li[role='menuitem']",
+        has_text=re.compile(rf"^\s*{re.escape(fmt_upper)}\s*$", re.I),
+    ).first
+    # Also locate PDF item to confirm menu opened (needed before DOCX click)
+    pdf_anchor = page.locator(
+        "ul[role='menu'] li[role='menuitem']",
+        has_text=re.compile(r"^\s*PDF\s*$", re.I),
+    ).first
+
+    errors = []
+
+    def _get_sb_local():
+        for sel in [
+            "input[placeholder='Search by Letter Type, Id and External Id']",
+            "input[placeholder='Search by Letter Type and Id']",
+            "input[placeholder*='Search by Letter']",
+            "input[placeholder*='Search']",
+        ]:
+            try:
+                loc = page.locator(sel)
+                if loc.count() > 0 and loc.first.is_visible(timeout=1500):
+                    return loc.first
+            except Exception:
+                pass
+        raise RuntimeError("Search box not found")
+
+    def _wait_row(q: str, timeout_ms=30000):
+        tokens = clean_text(q).lower().split()
+        start = page.evaluate("() => Date.now()")
+        confirmed = None
+        while True:
+            now = page.evaluate("() => Date.now()")
+            if now - start > timeout_ms:
+                raise RuntimeError(f"Timed out waiting for '{q}' in results")
+            if detect_no_data_found(page):
+                raise NotFoundError(f"NOT FOUND | {q}")
+            if table_rows.count() == 0:
+                confirmed = None; page.wait_for_timeout(250); continue
+            txt = clean_text(table_rows.first.inner_text(timeout=1000)).lower()
+            if not txt or not re.search(r"lt-\d+", txt) or not all(t in txt for t in tokens):
+                confirmed = None; page.wait_for_timeout(250); continue
+            if confirmed is None:
+                confirmed = now; page.wait_for_timeout(400); continue
+            txt2 = clean_text(table_rows.first.inner_text(timeout=1000)).lower()
+            if txt2 and re.search(r"lt-\d+", txt2) and all(t in txt2 for t in tokens):
+                return
+            confirmed = None; page.wait_for_timeout(250)
+
+    def _recover():
+        try:
+            if _find_back_arrow(page):
+                arrow = _find_back_arrow(page)
+                try:
+                    arrow.click(timeout=6000)
+                except Exception:
+                    arrow.click(force=True, timeout=6000)
+                page.wait_for_timeout(1000)
+                return
+        except Exception:
+            pass
+        try:
+            page.go_back(wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(1000)
+        except Exception:
+            pass
+        try:
+            page.goto(BASE_URL.rstrip("/") + "/letter-type",
+                      wait_until="domcontentloaded", timeout=30000)
+            page.wait_for_timeout(1000)
+        except Exception:
+            pass
+
+    for rec in records:
+        letter_name = rec["letter_name"].strip()
+        bu = rec["bu_name"].strip()
+        print(f"\n   📝 [{bu_type} {fmt_upper}] {letter_name}")
+        try:
+            # Ensure on listing page
+            if "/letter-type" not in (page.url or ""):
+                page.goto(BASE_URL.rstrip("/") + "/letter-type",
+                          wait_until="domcontentloaded", timeout=30000)
+                page.wait_for_timeout(1000)
+
+            # Search
+            sb = _get_sb_local()
+            expect(sb).to_be_visible(timeout=15000)
+            sb.click(); page.wait_for_timeout(150)
+            sb.press("Control+A"); sb.press("Backspace")
+            sb.type(letter_name, delay=25); sb.press("Enter")
+            page.wait_for_timeout(700)
+            try:
+                _ls = ".MuiCircularProgress-root,.MuiLinearProgress-root"
+                page.wait_for_selector(_ls, state="visible", timeout=1500)
+                page.wait_for_selector(_ls, state="hidden", timeout=20000)
+            except Exception:
+                pass
+            _wait_row(letter_name, timeout_ms=30000)
+
+            # Open detail
+            row = table_rows.first
+            pe = detect_pipeline_error_in_row(row)
+            if pe:
+                raise RuntimeError(f"Pipeline Error for '{letter_name}'")
+            id_cell = None
+            for nth in [1, 0]:
+                try:
+                    cell = row.locator("td").nth(nth)
+                    if cell.count() > 0 and cell.is_visible(timeout=1500):
+                        t = clean_text(cell.inner_text(timeout=1500))
+                        if re.match(r"^LT-\d+", t):
+                            id_cell = cell; break
+                except Exception:
+                    pass
+            row.scroll_into_view_if_needed(); page.wait_for_timeout(300)
+            try:
+                (id_cell or row).click(timeout=5000)
+            except Exception:
+                (id_cell or row).click(force=True, timeout=5000)
+            _wait_for_detail_page(page, timeout_ms=20000)
+
+            # Wait for preview
+            main_btn, menu_btn = _get_download_buttons(page)
+            wait_for_preview_ready(page, main_btn, timeout_ms=240000, fast_fail_ms=5000)
+            fail_if_preview_error(page)
+
+            # Open download menu
+            menu_btn.wait_for(state="visible", timeout=30000)
+            menu_btn.scroll_into_view_if_needed()
+            try:
+                menu_btn.click(timeout=5000)
+            except Exception:
+                menu_btn.click(force=True, timeout=5000)
+            pdf_anchor.wait_for(state="visible", timeout=20000)
+            page.wait_for_timeout(150)
+
+            # Click the target format item
+            menu_item.wait_for(state="visible", timeout=10000)
+            menu_item.scroll_into_view_if_needed()
+            file_path = os.path.join(
+                download_dir,
+                f"{make_safe_name(letter_name)}_{make_safe_name(bu)}.{fmt_lower}"
+            )
+            with page.expect_download(timeout=120000) as dl_info:
+                for method in [
+                    lambda: menu_item.click(timeout=5000),
+                    lambda: menu_item.click(force=True, timeout=5000),
+                    lambda: menu_item.dispatch_event("click"),
+                ]:
+                    try:
+                        method(); break
+                    except Exception:
+                        pass
+            dl_info.value.save_as(file_path)
+
+            assert os.path.exists(file_path), \
+                f"{fmt_upper} not saved to disk for '{letter_name}' (BU: {bu})"
+            assert os.path.getsize(file_path) > 0, \
+                f"{fmt_upper} is empty (0 bytes) for '{letter_name}' (BU: {bu})"
+
+            print(f"   ✅ {fmt_upper} saved: {file_path}")
+
+            # Go back to listing
+            arrow = _find_back_arrow(page)
+            if arrow:
+                try:
+                    arrow.click(timeout=8000)
+                except Exception:
+                    arrow.click(force=True, timeout=8000)
+            else:
+                page.go_back(wait_until="domcontentloaded", timeout=15000)
+            try:
+                _get_sb_local().wait_for(state="visible", timeout=10000)
+            except Exception:
+                pass
+            page.wait_for_timeout(500)
+
+        except AssertionError:
+            errors.append(str(sys.exc_info()[1]))
+            try:
+                page.screenshot(
+                    path=os.path.join(download_dir, f"FAIL_{make_safe_name(letter_name)}.png"),
+                    full_page=True
+                )
+            except Exception:
+                pass
+            try:
+                page.keyboard.press("Escape")
+            except Exception:
+                pass
+            _recover()
+
+        except Exception as e:
+            errors.append(f"{letter_name}: {e}")
+            try:
+                page.keyboard.press("Escape")
+            except Exception:
+                pass
+            _recover()
+
+    if errors:
+        raise AssertionError(
+            f"[{bu_type} {fmt_upper}] {len(errors)} failure(s):\n" + "\n".join(errors)
+        )
+
+
+@pytest.mark.sanity
+@pytest.mark.dependency(name="test_download_ang_pdf", depends=["test_letter_type_ingestion"])
+def test_download_ang_pdf(page):
+    """TC_DL_001a: ANG letter — PDF download and size > 0."""
+    _run_download_for_bu_and_format(page, bu_type="ANG", fmt="pdf")
+
+
+@pytest.mark.sanity
+@pytest.mark.dependency(name="test_download_ang_docx", depends=["test_letter_type_ingestion"])
+def test_download_ang_docx(page):
+    """TC_DL_001b: ANG letter — DOCX download and size > 0."""
+    _run_download_for_bu_and_format(page, bu_type="ANG", fmt="docx")
+
+
+@pytest.mark.sanity
+@pytest.mark.dependency(name="test_download_bu_pdf", depends=["test_letter_type_ingestion"])
+def test_download_bu_pdf(page):
+    """TC_DL_001c: BU (non-ANG) letter — PDF download and size > 0."""
+    _run_download_for_bu_and_format(page, bu_type="BU", fmt="pdf")
+
+
+@pytest.mark.sanity
+@pytest.mark.dependency(name="test_download_bu_docx", depends=["test_letter_type_ingestion"])
+def test_download_bu_docx(page):
+    """TC_DL_001d: BU (non-ANG) letter — DOCX download and size > 0."""
+    _run_download_for_bu_and_format(page, bu_type="BU", fmt="docx")
