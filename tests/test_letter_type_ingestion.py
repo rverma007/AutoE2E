@@ -515,6 +515,13 @@ def _wait_for_real_rows(ltp: LetterTypePage, timeout_s: int = 15) -> None:
 @allure.feature("Letter Type")
 class TestLetterTypeIngestion:
 
+    @classmethod
+    def setup_class(cls):
+        """Clear the shared testdata JSON before every ingestion run so stale entries are removed."""
+        os.makedirs(_TESTDATA_DIR, exist_ok=True)
+        with open(_TESTDATA_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+
     @allure.story("Ingestion")
     @allure.title("[TC_LT_ING_001] Ingest letter type — parameterised by BU")
     @allure.severity(allure.severity_level.CRITICAL)
