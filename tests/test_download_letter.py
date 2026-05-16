@@ -240,7 +240,7 @@ def _apply_bu_filter(page, bu_name: str):
     print(f"✅ Filter applied: Business Unit = {bu_name}")
 
 
-def _login_and_open_letter_type(page, bu_name: str = "ANG DONOT USE"):
+def _login_and_open_letter_type(page, bu_name: str = None):
     search_box = page.locator("input[placeholder='Search by Letter Type and Id']")
 
     page.goto(BASE_URL, wait_until="domcontentloaded", timeout=600000)
@@ -289,7 +289,8 @@ def _login_and_open_letter_type(page, bu_name: str = "ANG DONOT USE"):
         )
 
     print("✅ On Letter Type listing page.")
-    _apply_bu_filter(page, bu_name)
+    if bu_name:
+        _apply_bu_filter(page, bu_name)
 
 
 def _get_download_buttons(page):
@@ -1189,16 +1190,9 @@ def download_pdf_and_docx_from_testdata(page, download_root: str):
         )
 
     # Group by BU so we apply each filter only once
-    from collections import defaultdict
-    by_bu: dict[str, list[str]] = defaultdict(list)
-    for rec in records:
-        by_bu[rec["bu_name"].strip()].append(rec["letter_name"].strip())
-
     print(f"\n{'='*50}")
     print(f"📋 Testdata file : {TESTDATA_FILE}")
-    print(f"📄 Total letters : {len(records)}  ({len(by_bu)} BU group(s))")
-    for bu, names in by_bu.items():
-        print(f"   • {bu}: {len(names)} letter(s)")
+    print(f"📄 Total letters : {len(records)}")
     print(f"{'='*50}\n")
 
     download_dir = os.path.join(download_root, "pdf_docx_downloads")
@@ -1271,12 +1265,12 @@ def download_pdf_and_docx_from_testdata(page, download_root: str):
         except Exception:
             return False
 
-    def _relogin(bu: str):
+    def _relogin():
         if _is_login():
-            _login_and_open_letter_type(page, bu_name=bu)
+            _login_and_open_letter_type(page)
 
-    def _search(q: str, bu: str):
-        _relogin(bu)
+    def _search(q: str):
+        _relogin()
         if "/letter-type" not in (page.url or ""):
             page.goto(BASE_URL.rstrip("/") + "/letter-type",
                       wait_until="domcontentloaded", timeout=30000)
@@ -1331,7 +1325,7 @@ def download_pdf_and_docx_from_testdata(page, download_root: str):
         _wait_for_detail_page(page, timeout_ms=20000)
         print(f"   ✅ Detail page: {page.url}")
 
-    def _go_back(bu: str):
+    def _go_back():
         arrow = _find_back_arrow(page)
         if arrow:
             try:
@@ -1375,104 +1369,96 @@ def download_pdf_and_docx_from_testdata(page, download_root: str):
             page.wait_for_timeout(200)
         raise RuntimeError(f"Could not click {label} after 3 attempts")
 
-    # ── per-BU, per-letter loop ───────────────────────────────────────────
-    for bu, letter_names in by_bu.items():
-        print(f"\n{'━'*50}")
-        print(f"🏢 BU: {bu}  ({len(letter_names)} letter(s))")
-        print(f"{'━'*50}")
+    # ── flat letter loop (no BU filter — search directly) ────────────────
+    for rec in records:
+        letter_name = rec["letter_name"].strip()
+        bu          = rec["bu_name"].strip()
 
-        # Apply BU filter once for this group
+        result = {
+            "letter_name": letter_name,
+            "bu_name": bu,
+            "pdf_path": None,
+            "docx_path": None,
+            "pdf_ok": False,
+            "docx_ok": False,
+            "error": None,
+        }
         try:
-            _apply_bu_filter(page, bu)
-        except Exception as e:
-            print(f"   ⚠️  Could not apply filter for '{bu}': {e}")
+            print(f"\n   📝 {letter_name}  (BU: {bu})")
 
-        for letter_name in letter_names:
-            result = {
-                "letter_name": letter_name,
-                "bu_name": bu,
-                "pdf_path": None,
-                "docx_path": None,
-                "pdf_ok": False,
-                "docx_ok": False,
-                "error": None,
-            }
+            # 1. Search + open detail (no filter applied)
+            _search(letter_name)
+            if detect_no_data_found(page) or table_rows.count() == 0:
+                raise NotFoundError(f"NOT FOUND | {letter_name}")
+            _open_detail(letter_name)
+            fail_if_preview_error(page)
+
+            # 2. Wait for preview ready
+            main_btn, _ = _get_download_buttons(page)
+            wait_for_preview_ready(page, main_btn, timeout_ms=240000, fast_fail_ms=5000)
+            fail_if_preview_error(page)
+
+            # 3. Download PDF ──────────────────────────────────────────
+            print("   ⬇️  Downloading PDF…")
+            _open_menu()
+            with page.expect_download(timeout=120000) as dl_info:
+                _click_item(pdf_menu_item, "PDF")
+            pdf_path = os.path.join(download_dir, f"{make_safe_name(letter_name)}_{make_safe_name(bu)}.pdf")
+            dl_info.value.save_as(pdf_path)
+
+            assert os.path.exists(pdf_path), \
+                f"PDF not saved to disk for '{letter_name}' (BU: {bu})"
+            assert os.path.getsize(pdf_path) > 0, \
+                f"PDF is empty (0 bytes) for '{letter_name}' (BU: {bu})"
+
+            result["pdf_path"] = pdf_path
+            result["pdf_ok"]   = True
+            print(f"   ✅ PDF saved: {pdf_path}")
+
+            # 4. Download DOCX ─────────────────────────────────────────
+            print("   ⬇️  Downloading DOCX…")
+            _open_menu()   # re-open — menu closes after PDF click
+            with page.expect_download(timeout=120000) as dl_info:
+                _click_item(docx_menu_item, "DOCX")
+            docx_path = os.path.join(download_dir, f"{make_safe_name(letter_name)}_{make_safe_name(bu)}.docx")
+            dl_info.value.save_as(docx_path)
+
+            assert os.path.exists(docx_path), \
+                f"DOCX not saved to disk for '{letter_name}' (BU: {bu})"
+            assert os.path.getsize(docx_path) > 0, \
+                f"DOCX is empty (0 bytes) for '{letter_name}' (BU: {bu})"
+
+            result["docx_path"] = docx_path
+            result["docx_ok"]   = True
+            print(f"   ✅ DOCX saved: {docx_path}")
+
+            _go_back()
+
+        except AssertionError as e:
+            result["error"] = str(e)
+            assertion_errors.append(str(e))
+            print(f"   ❌ Assertion: {e}")
             try:
-                print(f"\n   📝 {letter_name}")
+                page.screenshot(path=os.path.join(
+                    download_dir, f"FAIL_{make_safe_name(letter_name)}.png"), full_page=True)
+            except Exception:
+                pass
+            try:
+                page.keyboard.press("Escape")
+                _go_back()
+            except Exception:
+                pass
 
-                # 1. Search + open detail
-                _search(letter_name, bu)
-                if detect_no_data_found(page) or table_rows.count() == 0:
-                    raise NotFoundError(f"NOT FOUND | {letter_name}")
-                _open_detail(letter_name)
-                fail_if_preview_error(page)
+        except (NotFoundError, IngestionFailError, RuntimeError) as e:
+            result["error"] = str(e)
+            print(f"   ⚠️  {e}")
+            try:
+                page.keyboard.press("Escape")
+                _go_back()
+            except Exception:
+                pass
 
-                # 2. Wait for preview ready
-                main_btn, _ = _get_download_buttons(page)
-                wait_for_preview_ready(page, main_btn, timeout_ms=240000, fast_fail_ms=5000)
-                fail_if_preview_error(page)
-
-                # 3. Download PDF ──────────────────────────────────────────
-                print("   ⬇️  Downloading PDF…")
-                _open_menu()
-                with page.expect_download(timeout=120000) as dl_info:
-                    _click_item(pdf_menu_item, "PDF")
-                pdf_path = os.path.join(download_dir, f"{make_safe_name(letter_name)}_{make_safe_name(bu)}.pdf")
-                dl_info.value.save_as(pdf_path)
-
-                assert os.path.exists(pdf_path), \
-                    f"PDF not saved to disk for '{letter_name}' (BU: {bu})"
-                assert os.path.getsize(pdf_path) > 0, \
-                    f"PDF is empty (0 bytes) for '{letter_name}' (BU: {bu})"
-
-                result["pdf_path"] = pdf_path
-                result["pdf_ok"]   = True
-                print(f"   ✅ PDF saved: {pdf_path}")
-
-                # 4. Download DOCX ─────────────────────────────────────────
-                print("   ⬇️  Downloading DOCX…")
-                _open_menu()   # re-open — menu closes after PDF click
-                with page.expect_download(timeout=120000) as dl_info:
-                    _click_item(docx_menu_item, "DOCX")
-                docx_path = os.path.join(download_dir, f"{make_safe_name(letter_name)}_{make_safe_name(bu)}.docx")
-                dl_info.value.save_as(docx_path)
-
-                assert os.path.exists(docx_path), \
-                    f"DOCX not saved to disk for '{letter_name}' (BU: {bu})"
-                assert os.path.getsize(docx_path) > 0, \
-                    f"DOCX is empty (0 bytes) for '{letter_name}' (BU: {bu})"
-
-                result["docx_path"] = docx_path
-                result["docx_ok"]   = True
-                print(f"   ✅ DOCX saved: {docx_path}")
-
-                _go_back(bu)
-
-            except AssertionError as e:
-                result["error"] = str(e)
-                assertion_errors.append(str(e))
-                print(f"   ❌ Assertion: {e}")
-                try:
-                    page.screenshot(path=os.path.join(
-                        download_dir, f"FAIL_{make_safe_name(letter_name)}.png"), full_page=True)
-                except Exception:
-                    pass
-                try:
-                    page.keyboard.press("Escape")
-                    _go_back(bu)
-                except Exception:
-                    pass
-
-            except (NotFoundError, IngestionFailError, RuntimeError) as e:
-                result["error"] = str(e)
-                print(f"   ⚠️  {e}")
-                try:
-                    page.keyboard.press("Escape")
-                    _go_back(bu)
-                except Exception:
-                    pass
-
-            results.append(result)
+        results.append(result)
 
     # ── summary ───────────────────────────────────────────────────────────
     pdf_ok   = sum(1 for r in results if r["pdf_ok"])
@@ -1584,9 +1570,29 @@ def main(page):
 
     os.makedirs(download_root, exist_ok=True)
 
+    # Resolve and validate excel paths
+    valid_excel = []
+    for ep in excel_files:
+        full = ep if os.path.isabs(ep) else os.path.join(PROJECT_DIR, ep)
+        if os.path.exists(full):
+            valid_excel.append(full)
+        else:
+            print(f"⚠️ Excel file not found, skipping: {full}")
+
+    if not valid_excel:
+        msg = (
+            f"No Excel files found. Provide via EXCEL_FILE env var "
+            f"or place the file in {PROJECT_DIR}"
+        )
+        if running_under_pytest:
+            pytest.skip(msg)
+        else:
+            print(msg)
+            return
+
     _login_and_open_letter_type(page, bu_name=bu_name)
 
-    for excel_path in excel_files:
+    for excel_path in valid_excel:
         download_for_one_excel(page, excel_path, download_root, column, bu_name=bu_name)
 
 
