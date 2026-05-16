@@ -775,11 +775,24 @@ class TestLetterTypeIngestion:
                 attachment_type=allure.attachment_type.TEXT,
             )
 
+            # Wait for the listing page to be ready before searching
+            try:
+                ltp.search_box.wait_for(state="visible", timeout=15_000)
+            except Exception:
+                # If search box not found, navigate back to listing
+                ltp.open_direct()
+                try:
+                    ltp.search_box.wait_for(state="visible", timeout=15_000)
+                except Exception:
+                    pass
+            authed_page.wait_for_timeout(1_000)
+
             def _do_search() -> list:
                 ltp.search("")
-                authed_page.wait_for_timeout(300)
+                authed_page.wait_for_timeout(500)
                 ltp.search(name)
                 authed_page.keyboard.press("Enter")
+                authed_page.wait_for_timeout(500)
                 try:
                     authed_page.wait_for_load_state("networkidle", timeout=6_000)
                 except Exception:
