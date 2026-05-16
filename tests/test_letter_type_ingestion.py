@@ -891,7 +891,7 @@ class TestLetterTypeIngestion:
                 f"even after refresh + retry. URL: {authed_page.url}"
             )
 
-            assert "letter-type-detail" in authed_page.url, (
+            assert "/letter-type/" in authed_page.url, (
                 f"FAIL — Detail page did not open for '{name}'. URL: {authed_page.url}"
             )
 
