@@ -792,14 +792,22 @@ class TestLetterTypeIngestion:
                 _wait_for_real_rows(ltp, timeout_s=8)
                 return ltp.visible_row_texts(limit=10)
 
-            def _get_status(rows: list) -> str:
-                """Return the status token from the matched row, or '' if not found."""
-                matched = next((t for t in rows if name.lower() in t.lower()), None)
-                if matched is None:
-                    return ""
-                for status in ("draft", "pipeline error", "processing", "approved", "published"):
-                    if _re.search(rf"\b{_re.escape(status)}\b", matched, _re.I):
-                        return status.lower()
+            def _get_status(_unused_rows: list = None) -> str:
+                """Read status directly from the matched table row using textContent
+                (captures off-screen columns that inner_text misses)."""
+                table_rows = authed_page.locator("table tbody tr")
+                for i in range(min(table_rows.count(), 10)):
+                    try:
+                        row = table_rows.nth(i)
+                        # textContent gets ALL text including overflow/off-screen cells
+                        all_text = (row.evaluate("el => el.textContent") or "").lower()
+                        if name.lower() not in all_text:
+                            continue
+                        for status in ("pipeline error", "draft", "processing", "approved", "published"):
+                            if status in all_text:
+                                return status
+                    except Exception:
+                        pass
                 return ""
 
             def _do_refresh():
@@ -822,7 +830,7 @@ class TestLetterTypeIngestion:
             _poll_deadline = _time.monotonic() + 180
             row_texts = _do_search()
             while _time.monotonic() < _poll_deadline:
-                status = _get_status(row_texts)
+                status = _get_status()
                 if status in ("draft", "pipeline error"):
                     break  # terminal state reached
                 # Still processing or not found yet — refresh and retry
@@ -863,14 +871,14 @@ class TestLetterTypeIngestion:
 
         # ── 13c. Assert: status is Draft, not Pipeline Error ──────────────────
         with allure.step(f"Assert status is 'Draft' (not 'Pipeline Error') for '{name}'"):
-            if _re.search(r"\bpipeline\s*error\b", matched_row, _re.I):
+            final_status = _get_status()
+            if final_status == "pipeline error":
                 assert False, (
-                    f"FAIL — '{name}' (BU={bu_raw}) has status 'Pipeline Error'.\n"
-                    f"Row text: {matched_row[:200]!r}"
+                    f"FAIL — '{name}' (BU={bu_raw}) has status 'Pipeline Error'."
                 )
-            assert _re.search(r"\bdraft\b", matched_row, _re.I), (
-                f"FAIL — '{name}' (BU={bu_raw}) does not show 'Draft' status.\n"
-                f"Row text: {matched_row[:200]!r}"
+            assert final_status == "draft", (
+                f"FAIL — '{name}' (BU={bu_raw}) does not show 'Draft' status. "
+                f"Detected status: '{final_status or 'unknown'}'"
             )
 
         # ── 14. Save to shared testdata so download TC can find this letter ───
