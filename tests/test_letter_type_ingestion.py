@@ -814,7 +814,7 @@ class TestLetterTypeIngestion:
 
         # ── 13c. Open detail page and assert Status = Draft ───────────────────
         with allure.step(f"Open detail page and assert status is 'Draft' for '{name}'"):
-            # Click the first matching row to open the detail page
+            # Find the matching row
             table_rows = authed_page.locator("table tbody tr")
             detail_row = None
             for i in range(min(table_rows.count(), 5)):
@@ -830,7 +830,57 @@ class TestLetterTypeIngestion:
                 f"Could not locate row for '{name}' to click into detail page."
             )
 
-            detail_row.click(timeout=8_000)
+            # Scroll into view and dismiss any overlays
+            detail_row.scroll_into_view_if_needed()
+            authed_page.wait_for_timeout(300)
+            try:
+                authed_page.evaluate("""() => {
+                    document.querySelectorAll('[role="tooltip"]').forEach(el => {
+                        el.style.display = 'none';
+                    });
+                }""")
+            except Exception:
+                pass
+
+            # Try clicking the LT-ID cell first (most reliable), then fall back to row
+            clicked = False
+            cells = detail_row.locator("td")
+            for nth in range(min(cells.count(), 3)):
+                try:
+                    cell = cells.nth(nth)
+                    cell_text = (cell.inner_text(timeout=500) or "").strip()
+                    if _re.match(r"^LT-\d+", cell_text):
+                        cell.click(timeout=5_000)
+                        clicked = True
+                        break
+                except Exception:
+                    pass
+
+            if not clicked:
+                # Try clicking the name cell
+                try:
+                    name_cell = detail_row.locator(f"td:has-text('{name[:30]}')")
+                    if name_cell.count():
+                        name_cell.first.click(timeout=5_000)
+                        clicked = True
+                except Exception:
+                    pass
+
+            if not clicked:
+                # Force-click the row itself
+                for method in [
+                    lambda: detail_row.click(timeout=5_000),
+                    lambda: detail_row.click(force=True, timeout=5_000),
+                    lambda: detail_row.evaluate("el => el.click()"),
+                ]:
+                    try:
+                        method()
+                        clicked = True
+                        break
+                    except Exception:
+                        pass
+
+            # Wait for navigation to detail page
             try:
                 authed_page.wait_for_url("**/letter-type-detail**", timeout=15_000)
             except Exception:
