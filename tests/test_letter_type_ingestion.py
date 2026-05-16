@@ -798,7 +798,7 @@ class TestLetterTypeIngestion:
                 if matched is None:
                     return ""
                 for status in ("draft", "pipeline error", "processing", "approved", "published"):
-                    if _re.search(rf"\b{re.escape(status)}\b", matched, _re.I):
+                    if _re.search(rf"\b{_re.escape(status)}\b", matched, _re.I):
                         return status.lower()
                 return ""
 
