@@ -830,49 +830,49 @@ class TestLetterTypeIngestion:
                 f"Could not locate row for '{name}' to click into detail page."
             )
 
-            # Scroll into view
+            # Same click approach as download TC: find LT-xxx cell and click it
             detail_row.scroll_into_view_if_needed()
-            authed_page.wait_for_timeout(400)
+            authed_page.wait_for_timeout(300)
 
-            url_before = authed_page.url
-
-            # Strategy 1: click the letter name cell (skips checkbox cell)
-            try:
-                name_cell = detail_row.locator("td").filter(
-                    has_text=_re.compile(_re.escape(name[:25]), _re.I)
-                ).first
-                if name_cell.count() and name_cell.is_visible(timeout=1_000):
-                    name_cell.click(timeout=6_000)
-            except Exception:
-                pass
-
-            # Strategy 2: click any non-checkbox text cell (td index >= 1)
-            if authed_page.url == url_before:
-                cells = detail_row.locator("td")
-                for nth in range(1, min(cells.count(), 5)):
-                    try:
-                        cell = cells.nth(nth)
-                        if cell.is_visible(timeout=500):
-                            cell.click(timeout=5_000)
-                            break
-                    except Exception:
-                        pass
-
-            # Strategy 3: force-click the row
-            if authed_page.url == url_before:
+            id_cell = None
+            for nth in [1, 0]:
                 try:
-                    detail_row.click(force=True, timeout=5_000)
+                    cell = detail_row.locator("td").nth(nth)
+                    if cell.count() > 0 and cell.is_visible(timeout=1_500):
+                        t = (cell.inner_text(timeout=1_500) or "").strip()
+                        if _re.match(r"^LT-\d+", t):
+                            id_cell = cell
+                            break
                 except Exception:
-                    try:
-                        detail_row.evaluate("el => el.click()")
-                    except Exception:
-                        pass
+                    pass
 
-            # Wait for navigation to detail page
             try:
-                authed_page.wait_for_url("**/letter-type-detail**", timeout=15_000)
+                (id_cell or detail_row).click(timeout=5_000)
             except Exception:
-                pass
+                (id_cell or detail_row).click(force=True, timeout=5_000)
+
+            # Wait for detail page confirmed via URL or back-arrow (same as download TC)
+            _detail_start = authed_page.evaluate("() => Date.now()")
+            while True:
+                _now = authed_page.evaluate("() => Date.now()")
+                if _now - _detail_start > 20_000:
+                    break
+                try:
+                    if "/letter-type/" in (authed_page.url or ""):
+                        break
+                except Exception:
+                    pass
+                try:
+                    back = authed_page.locator(
+                        "button[aria-label*='back' i], "
+                        "[data-testid='ArrowBackIcon'], "
+                        "[data-testid='KeyboardBackspaceIcon']"
+                    ).first
+                    if back.count() and back.is_visible(timeout=300):
+                        break
+                except Exception:
+                    pass
+                authed_page.wait_for_timeout(300)
 
             assert "letter-type-detail" in authed_page.url, (
                 f"FAIL — Detail page did not open for '{name}'. URL: {authed_page.url}"
