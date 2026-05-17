@@ -52,7 +52,13 @@ class SettingsPage(BasePage):
         return self.page.locator(
             "select[class*='business'], "
             "[data-testid='bu-select'], "
-            "select, [role='combobox']"
+            "[aria-label*='Business Unit' i], "
+            "[aria-label*='business' i], "
+            "[placeholder*='Business Unit' i], "
+            "[name*='business' i], "
+            "[name*='bu' i], "
+            "select, "
+            "[role='combobox'][aria-haspopup='listbox']"
         ).first
 
     @property
@@ -101,4 +107,6 @@ class SettingsPage(BasePage):
     def click_bu_config_tab(self) -> None:
         if self.is_visible(self.bu_config_tab, timeout=5_000):
             self.safe_click(self.bu_config_tab, "Business Unit Config tab")
+            self.wait_for_idle()
+            self.page.wait_for_timeout(1_000)
             self.wait_for_idle()

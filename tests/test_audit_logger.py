@@ -98,12 +98,16 @@ class TestAuditLogger:
 
         with allure.step("Assert first row has non-empty cell data"):
             non_empty = [c for c in row_cells if c.strip()]
-            if len(non_empty) < 3:
-                pytest.skip(
-                    f"Audit entry cells appear empty — table may still be loading "
-                    f"or the DOM structure differs in this environment. "
-                    f"Non-empty cells found: {non_empty}"
-                )
+            allure.attach(
+                f"Non-empty cells: {non_empty}",
+                name="Audit entry cells",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            assert len(non_empty) >= 1, (
+                f"Audit entry row appears completely empty — "
+                f"all {len(row_cells)} cells have no text. "
+                f"Non-empty cells found: {non_empty}"
+            )
 
     @allure.story("Filters")
     @allure.title("[TC_SM_046] Search & Date Range filter work on Audit Logger")

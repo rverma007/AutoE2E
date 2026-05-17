@@ -95,6 +95,18 @@ class AuditLoggerPage(BasePage):
         return self._table_rows.count()
 
     def get_first_row_texts(self) -> list:
+        # Wait for at least one cell to have visible text before reading
+        try:
+            self.page.wait_for_function(
+                """() => {
+                    const tds = document.querySelectorAll('table tbody tr:first-child td');
+                    return tds.length > 0 &&
+                           [...tds].some(td => td.innerText.trim().length > 0);
+                }""",
+                timeout=8_000,
+            )
+        except Exception:
+            pass
         cells = self.page.locator("table tbody tr:first-child td")
         return [self.text_of(cells.nth(i)) for i in range(cells.count())]
 

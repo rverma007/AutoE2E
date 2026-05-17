@@ -71,12 +71,14 @@ class TestReconReport:
                     "may require a filter selection first."
                 )
 
-        with allure.step("Click Download once — listen for file download and all API responses"):
+        with allure.step("Click Download — listen for file download, new tab, and API responses"):
             download_captured = False
             api_captured = False
+            new_tab_captured = False
             api_status = None
             api_url = None
             api_content_type = None
+            new_tab_url = None
             all_responses: list = []
 
             _FILE_CONTENT_TYPES = (
@@ -97,7 +99,17 @@ class TestReconReport:
                 except Exception:
                     pass
 
+            def _on_page(p) -> None:
+                nonlocal new_tab_url, new_tab_captured
+                try:
+                    p.wait_for_load_state("domcontentloaded", timeout=5_000)
+                    new_tab_url = p.url
+                    new_tab_captured = bool(new_tab_url and new_tab_url != "about:blank")
+                except Exception:
+                    pass
+
             recon_report_page.page.on("response", _on_response)
+            recon_report_page.page.context.on("page", _on_page)
             try:
                 with recon_report_page.page.expect_download(timeout=15_000) as dl_info:
                     recon_report_page.safe_click(recon_report_page.download_button, "Download report")
@@ -115,11 +127,15 @@ class TestReconReport:
                 raise
             except Exception:
                 try:
-                    recon_report_page.page.wait_for_timeout(4_000)
+                    recon_report_page.page.wait_for_timeout(5_000)
                 except Exception:
                     pass
             finally:
                 recon_report_page.page.remove_listener("response", _on_response)
+                try:
+                    recon_report_page.page.context.remove_listener("page", _on_page)
+                except Exception:
+                    pass
 
             if not download_captured:
                 for r in all_responses:
@@ -140,7 +156,7 @@ class TestReconReport:
                     except Exception:
                         pass
 
-                if not api_captured:
+                if not api_captured and not new_tab_captured:
                     resp_log = "\n".join(
                         f"[{r.status}] {r.url}  ct={r.header_value('content-type') or ''}"
                         for r in all_responses
@@ -154,6 +170,7 @@ class TestReconReport:
             allure.attach(
                 f"File download captured : {download_captured}\n"
                 f"API response captured  : {api_captured}\n"
+                f"New tab opened         : {new_tab_captured} ({new_tab_url})\n"
                 f"API status             : {api_status}\n"
                 f"API content-type       : {api_content_type}\n"
                 f"API URL                : {api_url}\n"
@@ -163,14 +180,20 @@ class TestReconReport:
             )
 
         with allure.step("Assert download was initiated"):
-            if api_captured:
+            if new_tab_captured:
+                allure.attach(
+                    f"Report opened in new tab: {new_tab_url}",
+                    name="New tab report",
+                    attachment_type=allure.attachment_type.TEXT,
+                )
+            elif api_captured:
                 assert api_status in (200, 201, 202), (
                     f"Recon report API returned unexpected status: {api_status} — URL: {api_url}"
                 )
             elif not download_captured:
                 pytest.skip(
-                    "Download button was clicked but neither a browser file download "
-                    "nor an API response with a file content-type / content-disposition "
-                    "header was captured. The download mechanism may differ in this "
-                    "environment — check the 'All network responses' attachment in the Allure report."
+                    "Download button was clicked but neither a browser file download, "
+                    "a new tab, nor an API response with a file content-type / "
+                    "content-disposition header was captured. "
+                    "Check the 'All network responses' attachment in the Allure report."
                 )

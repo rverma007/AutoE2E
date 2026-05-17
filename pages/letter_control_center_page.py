@@ -108,7 +108,14 @@ class LetterControlCenterPage(BasePage):
 
     @property
     def delivery_logs_tab(self):
-        return self.page.get_by_role("tab", name="Delivery Logs")
+        return self.page.locator(
+            "[role='tab']:has-text('Delivery Logs'), "
+            "[role='tab']:has-text('Delivery'), "
+            "[role='tab']:has-text('Logs'), "
+            "button:has-text('Delivery Logs'), "
+            "button:has-text('Delivery'), "
+            "a:has-text('Delivery Logs')"
+        ).first
 
     @property
     def _footer_text(self):
