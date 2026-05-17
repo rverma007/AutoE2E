@@ -335,12 +335,19 @@ class DashboardPage(BasePage):
 
     def all_card_labels_visible(self, timeout: int = 10_000) -> dict[str, bool]:
         """Return {label: visible} for every stat card label."""
-        return {
-            label: self.is_visible(
+        results = {}
+        for label in self._CARD_LABELS.values():
+            # Try exact match first (fast path), then fall back to substring
+            # match to handle text wrapped across elements or &amp; variants.
+            visible = self.is_visible(
                 self.page.get_by_text(label, exact=True).first, timeout=timeout
             )
-            for label in self._CARD_LABELS.values()
-        }
+            if not visible:
+                visible = self.is_visible(
+                    self.page.get_by_text(label, exact=False).first, timeout=2_000
+                )
+            results[label] = visible
+        return results
 
     # ── API intercept helper ──────────────────────────────────────────────────
 
