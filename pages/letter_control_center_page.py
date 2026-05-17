@@ -429,14 +429,17 @@ class LetterControlCenterPage(BasePage):
         return False
 
     def stat_value(self, heading_text: str) -> str:
-        """Return the numeric text from a statistics card by its heading."""
+        """Return the numeric value from a statistics card by its heading text."""
         card = self.page.locator(
             f"h3:has-text('{heading_text}'), h4:has-text('{heading_text}')"
         ).first
         if not self.is_visible(card, timeout=8_000):
             return ""
         parent = card.locator("xpath=../..").first
-        return self.text_of(parent).strip()
+        full_text = self.text_of(parent).strip()
+        # Card text is e.g. "Letter Types Used\n\n24" — extract the last number
+        nums = re.findall(r"[\d,]+", full_text)
+        return nums[-1].replace(",", "") if nums else ""
 
     def open_generate_letter_dialog(self) -> bool:
         """Click the main 'Generate Letter' button; return True when the dialog is visible."""
