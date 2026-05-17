@@ -50,6 +50,17 @@ def _load_ingested_letters() -> list:
         return []
 
 
+def _load_generated_letters() -> list:
+    if not os.path.exists(_GENERATED_FILE):
+        return []
+    try:
+        with open(_GENERATED_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
 def _save_generated_letter(letter_name: str, bu_name: str,
                             xml_path: str, generated_path: str, status: str) -> None:
     os.makedirs(_TESTDATA_DIR, exist_ok=True)
@@ -578,9 +589,115 @@ class TestGenerateLetter:
             result.get("status", "ERROR"),
         )
 
-        assert result["status"] == "OK", \
-            result.get("error") or "Generate failed with no specific error"
+        with allure.step("Assert generate flow completed without error"):
+            assert result["status"] == "OK", (
+                f"[TC_GEN_001] FAIL — Generate failed for '{letter_name}' (BU={bu_name}).\n"
+                f"Error: {result.get('error') or 'unknown'}"
+            )
 
-        gen_path = result["generated_path"]
-        assert os.path.exists(gen_path), f"Generated file not on disk: {gen_path}"
-        assert os.path.getsize(gen_path) > 0, f"Generated file is empty: {gen_path}"
+        with allure.step("Assert generated file exists on disk"):
+            gen_path = result["generated_path"]
+            assert gen_path, \
+                f"[TC_GEN_001] FAIL — No generated file path recorded for '{letter_name}' (BU={bu_name})"
+            assert os.path.exists(gen_path), (
+                f"[TC_GEN_001] FAIL — Generated file not saved to disk for '{letter_name}' (BU={bu_name}).\n"
+                f"Expected path: {gen_path}"
+            )
+
+        with allure.step("Assert generated file is non-empty"):
+            size = os.path.getsize(gen_path)
+            assert size > 0, (
+                f"[TC_GEN_001] FAIL — Generated file is 0 bytes for '{letter_name}' (BU={bu_name}).\n"
+                f"Path: {gen_path}"
+            )
+            allure.attach(
+                f"Path : {gen_path}\nSize : {size} bytes",
+                name="Generated file",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+
+        with allure.step("Assert generated_letters.json updated"):
+            records = _load_generated_letters()
+            saved = next(
+                (r for r in records
+                 if r["letter_name"].strip() == letter_name.strip()
+                 and r["bu_name"].strip() == bu_name.strip()),
+                None,
+            )
+            assert saved is not None, (
+                f"[TC_GEN_001] FAIL — '{letter_name}' (BU={bu_name}) not written to generated_letters.json"
+            )
+            assert saved["status"] == "OK", (
+                f"[TC_GEN_001] FAIL — Status in generated_letters.json is '{saved['status']}' "
+                f"for '{letter_name}' (BU={bu_name})"
+            )
+
+    @allure.story("Generate")
+    @allure.title("[TC_GEN_002] All BUs in ingested_letters.json have a generated file")
+    @allure.severity(allure.severity_level.CRITICAL)
+    @allure.description(
+        "After all TC_GEN_001 runs:\n"
+        "1. Load ingested_letters.json — the expected set of BUs.\n"
+        "2. Load generated_letters.json — the actual results.\n"
+        "3. Assert every ingested letter has an OK entry.\n"
+        "4. Assert every generated file still exists on disk and is non-empty."
+    )
+    @pytest.mark.dependency(name="test_all_generated", depends=["test_generate_letter"])
+    def test_all_bus_generated(self):
+        ingested  = _load_ingested_letters()
+        generated = _load_generated_letters()
+
+        with allure.step("Assert ingested_letters.json is not empty"):
+            assert ingested, "ingested_letters.json is empty — run test_letter_type_ingestion first"
+
+        with allure.step("Assert generated_letters.json is not empty"):
+            assert generated, \
+                f"generated_letters.json is empty or missing: {_GENERATED_FILE}"
+
+        gen_map = {
+            (r["letter_name"].strip(), r["bu_name"].strip()): r
+            for r in generated
+        }
+
+        missing, failed, bad_file = [], [], []
+
+        for rec in ingested:
+            key = (rec["letter_name"].strip(), rec["bu_name"].strip())
+            if key not in gen_map:
+                missing.append(f"{key[0]} | BU={key[1]}")
+                continue
+            g = gen_map[key]
+            if g.get("status") != "OK":
+                failed.append(f"{key[0]} | BU={key[1]} | status={g.get('status')} | {g.get('error','')}")
+                continue
+            path = g.get("generated_path", "")
+            if not path or not os.path.exists(path) or os.path.getsize(path) == 0:
+                bad_file.append(f"{key[0]} | BU={key[1]} | path={path}")
+
+        allure.attach(
+            "\n".join(
+                f"{'✅' if (r['letter_name'].strip(), r['bu_name'].strip()) in gen_map and gen_map[(r['letter_name'].strip(), r['bu_name'].strip())].get('status') == 'OK' else '❌'} "
+                f"{r['letter_name']} | BU={r['bu_name']}"
+                for r in ingested
+            ),
+            name="BU coverage",
+            attachment_type=allure.attachment_type.TEXT,
+        )
+
+        with allure.step("Assert no ingested letters are missing from generated results"):
+            assert not missing, (
+                f"[TC_GEN_002] FAIL — {len(missing)} letter(s) never generated:\n"
+                + "\n".join(f"  • {m}" for m in missing)
+            )
+
+        with allure.step("Assert no generate failures"):
+            assert not failed, (
+                f"[TC_GEN_002] FAIL — {len(failed)} letter(s) have non-OK status:\n"
+                + "\n".join(f"  • {f}" for f in failed)
+            )
+
+        with allure.step("Assert all generated files exist on disk and are non-empty"):
+            assert not bad_file, (
+                f"[TC_GEN_002] FAIL — {len(bad_file)} generated file(s) missing or empty:\n"
+                + "\n".join(f"  • {b}" for b in bad_file)
+            )
