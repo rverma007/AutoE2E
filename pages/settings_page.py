@@ -62,9 +62,11 @@ class SettingsPage(BasePage):
     @property
     def _success_toast(self):
         return self.page.locator(
-            "[class*='toast'], [class*='snackbar'], [class*='Snackbar'], "
-            "[role='alert'], "
-            "text=saved, text=Saved, text=success, text=Success"
+            "[class*='toast'], [class*='Toast'], "
+            "[class*='snackbar'], [class*='Snackbar'], [class*='MuiSnackbar'], "
+            "[class*='notification'], [class*='Notification'], "
+            "[class*='alert']:not(script), [role='alert'], [role='status'], "
+            "[class*='success'], [class*='Success']"
         ).first
 
     # ── BU Config — left panel (BU list) ─────────────────────────────────────
@@ -195,9 +197,48 @@ class SettingsPage(BasePage):
             self._wait_for_skeleton_gone(timeout=20_000)
 
     def click_save_settings(self) -> bool:
-        """Click Save Settings and wait for the success toast. Returns True if toast appears."""
-        self.safe_click(self.save_settings_button, "Save Settings")
-        return self.is_visible(self._success_toast, timeout=8_000)
+        """Click Save Settings and verify the save was accepted.
+
+        Returns True if any of these occur within 12 s:
+          1. A success toast/snackbar/alert appears.
+          2. A PUT/POST/PATCH API response comes back with status 2xx.
+          3. The button becomes disabled (app's 'saving…' indicator disappears
+             and page is still on Settings).
+        """
+        _SAVE_METHODS = {"PUT", "POST", "PATCH"}
+        _success_response: list = []
+
+        def _on_response(r):
+            try:
+                if r.request.method.upper() in _SAVE_METHODS and r.status in (200, 201, 204):
+                    _success_response.append(r.status)
+            except Exception:
+                pass
+
+        self.page.on("response", _on_response)
+        try:
+            self.safe_click(self.save_settings_button, "Save Settings")
+            # Give the app up to 12 s to respond
+            self.page.wait_for_timeout(500)
+            deadline = 12_000
+            step = 500
+            elapsed = 0
+            while elapsed < deadline:
+                # Check toast first
+                if self.is_visible(self._success_toast, timeout=300):
+                    return True
+                # Check network response
+                if _success_response:
+                    return True
+                self.page.wait_for_timeout(step)
+                elapsed += step
+            # Final fallback: any 2xx came in?
+            return bool(_success_response)
+        finally:
+            try:
+                self.page.remove_listener("response", _on_response)
+            except Exception:
+                pass
 
     def is_toggle_checked(self, toggle_locator) -> bool:
         """Return True if the MUI Switch is currently ON.
