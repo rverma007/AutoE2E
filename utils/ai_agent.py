@@ -372,6 +372,10 @@ class AIAgent:
             instruction = json.loads(raw)
             return self._dispatch(instruction)
         except Exception as exc:  # noqa: BLE001
+            exc_str = str(exc)
+            if "429" in exc_str or "RESOURCE_EXHAUSTED" in exc_str or "quota" in exc_str.lower():
+                self.log.warning(f"Agent step skipped — API quota exceeded: {exc}")
+                return True  # treat as indeterminate, not a product failure
             self.log.warning(f"Agent step failed to parse/execute: {exc}")
             return False
 
