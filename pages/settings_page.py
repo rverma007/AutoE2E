@@ -70,33 +70,59 @@ class SettingsPage(BasePage):
     # ── BU Config — left panel (BU list) ─────────────────────────────────────
 
     @property
-    def bu_list_items(self):
-        """All BU names in the left panel list."""
+    def _main_content(self):
+        """Main settings content area — excludes the sidebar nav."""
         return self.page.locator(
-            "[class*='list'] li, [class*='List'] li, "
-            "[class*='sidebar'] li, [class*='panel'] li, "
-            "ul li:has-text('Department'), ul li:has-text('BU'), ul li:has-text('Test'), "
-            "ul li:has-text('ANG'), ul li:has-text('PNF')"
+            "main, [role='main'], "
+            "[class*='content']:not(nav):not([role='navigation']), "
+            "[class*='Content']:not(nav):not([role='navigation'])"
+        ).first
+
+    @property
+    def bu_list_items(self):
+        """All BU name rows in the left panel list (scoped to main content)."""
+        # Try scoped selectors first; fall back to any visible clickable item
+        # inside a container that sits left of the detail panel.
+        return self.page.locator(
+            "main li, [role='main'] li, "
+            "[class*='MuiList'] li, [class*='MuiListItem'], "
+            "[class*='buList'] li, [class*='bu-list'] li, "
+            "[class*='unitList'] li, [class*='unit-list'] li"
         )
 
     @property
     def first_bu_item(self):
-        """First selectable BU in the left panel."""
+        """First selectable BU in the left panel — scoped to main content area."""
         return self.page.locator(
-            "[class*='list'] li:first-child, "
-            "[class*='List'] li:first-child, "
-            "ul li:first-child"
+            "main li:first-child, [role='main'] li:first-child, "
+            "[class*='MuiList'] li:first-child, "
+            "[class*='MuiListItem']:first-child, "
+            "[class*='MuiListItemButton']:first-child"
         ).first
 
     # ── BU Config — right panel (detail fields) ───────────────────────────────
 
     def _toggle_for_label(self, label_text: str):
-        """Return the toggle input/switch next to a given label text."""
-        return self.page.locator(
-            f"text={label_text}"
-        ).locator("xpath=..").locator(
-            "input[type='checkbox'], [role='switch'], [class*='toggle'], [class*='Toggle']"
-        ).first
+        """Return the toggle input/switch next to a given label text.
+
+        Tries progressively wider ancestor levels to handle MUI's
+        FormControlLabel → Switch → input nesting.
+        """
+        text_loc = self.page.locator(f"text={label_text}").first
+        _TOGGLE_SEL = (
+            "input[type='checkbox'], [role='switch'], "
+            "[class*='MuiSwitch'], [class*='toggle'], [class*='Toggle']"
+        )
+        # parent (xpath=..)
+        candidate = text_loc.locator("xpath=..").locator(_TOGGLE_SEL).first
+        if self.is_visible(candidate, timeout=2_000):
+            return candidate
+        # grandparent (xpath=../..)
+        candidate = text_loc.locator("xpath=../..").locator(_TOGGLE_SEL).first
+        if self.is_visible(candidate, timeout=2_000):
+            return candidate
+        # great-grandparent (xpath=../../..)
+        return text_loc.locator("xpath=../../..").locator(_TOGGLE_SEL).first
 
     @property
     def auto_correct_address_letter_toggle(self):
@@ -147,11 +173,31 @@ class SettingsPage(BasePage):
             self.safe_click(self.global_config_tab, "Global Config tab")
             self.wait_for_idle()
 
+    def _wait_for_skeleton_gone(self, timeout: int = 20_000) -> None:
+        """Wait until MUI skeleton/shimmer placeholders have disappeared from the content area."""
+        try:
+            self.page.wait_for_function(
+                """() => {
+                    const skels = document.querySelectorAll(
+                        '[class*="Skeleton"], [class*="skeleton"], [class*="shimmer"]'
+                    );
+                    if (skels.length === 0) return true;
+                    return [...skels].every(el => {
+                        const s = window.getComputedStyle(el);
+                        return s.display === 'none' || s.visibility === 'hidden' || s.opacity === '0';
+                    });
+                }""",
+                timeout=timeout,
+            )
+        except Exception:
+            pass
+        self.page.wait_for_timeout(800)
+
     def click_bu_config_tab(self) -> None:
         if self.is_visible(self.bu_config_tab, timeout=5_000):
             self.safe_click(self.bu_config_tab, "Business Unit Config tab")
             self.wait_for_idle()
-            self.page.wait_for_timeout(1_000)
+            self._wait_for_skeleton_gone(timeout=20_000)
 
     def click_save_settings(self) -> bool:
         """Click Save Settings and wait for the success toast. Returns True if toast appears."""
@@ -185,9 +231,10 @@ class SettingsPage(BasePage):
     def select_first_bu(self) -> str:
         """Click the first BU in the left panel list. Returns the BU name."""
         item = self.first_bu_item
-        if not self.is_visible(item, timeout=5_000):
+        if not self.is_visible(item, timeout=10_000):
             return ""
         name = self.text_of(item).strip()
         item.click()
         self.wait_for_idle()
+        self._wait_for_skeleton_gone(timeout=15_000)
         return name
