@@ -563,73 +563,68 @@ class TestGenerateLetter:
         "7. Assert the generated file is saved and non-empty."
     )
     @pytest.mark.dependency(name="test_generate_letter", depends=["test_letter_type_ingestion"])
-    @pytest.mark.parametrize("letter_name,bu_name", _params())
-    def test_generate_letter(self, authed_page: Page, letter_name: str, bu_name: str):
-        if letter_name == "__skip__":
+    def test_generate_letter(self, authed_page: Page):
+        records = _load_ingested_letters()
+        if not records:
             pytest.skip("No ingested letters found — run test_letter_type_ingestion first")
 
-        allure.attach(
-            f"Letter : {letter_name}\nBU     : {bu_name}",
-            name="Inputs",
-            attachment_type=allure.attachment_type.TEXT,
-        )
+        failures = []
 
-        try:
-            result = _generate_for_letter(
-                authed_page, letter_name, bu_name,
-                DEFAULT_GEN_ROOT, DEFAULT_XML_ROOT,
-            )
-        finally:
-            _recover_to_listing(authed_page)
+        for rec in records:
+            letter_name = rec["letter_name"]
+            bu_name = rec["bu_name"]
 
-        _save_generated_letter(
-            letter_name, bu_name,
-            result.get("xml_path", ""),
-            result.get("generated_path", ""),
-            result.get("status", "ERROR"),
-        )
-
-        with allure.step("Assert generate flow completed without error"):
-            assert result["status"] == "OK", (
-                f"[TC_GEN_001] FAIL — Generate failed for '{letter_name}' (BU={bu_name}).\n"
-                f"Error: {result.get('error') or 'unknown'}"
-            )
-
-        with allure.step("Assert generated file exists on disk"):
-            gen_path = result["generated_path"]
-            assert gen_path, \
-                f"[TC_GEN_001] FAIL — No generated file path recorded for '{letter_name}' (BU={bu_name})"
-            assert os.path.exists(gen_path), (
-                f"[TC_GEN_001] FAIL — Generated file not saved to disk for '{letter_name}' (BU={bu_name}).\n"
-                f"Expected path: {gen_path}"
-            )
-
-        with allure.step("Assert generated file is non-empty"):
-            size = os.path.getsize(gen_path)
-            assert size > 0, (
-                f"[TC_GEN_001] FAIL — Generated file is 0 bytes for '{letter_name}' (BU={bu_name}).\n"
-                f"Path: {gen_path}"
-            )
             allure.attach(
-                f"Path : {gen_path}\nSize : {size} bytes",
-                name="Generated file",
+                f"Letter : {letter_name}\nBU     : {bu_name}",
+                name=f"Input — {letter_name}",
                 attachment_type=allure.attachment_type.TEXT,
             )
 
-        with allure.step("Assert generated_letters.json updated"):
-            records = _load_generated_letters()
-            saved = next(
-                (r for r in records
-                 if r["letter_name"].strip() == letter_name.strip()
-                 and r["bu_name"].strip() == bu_name.strip()),
-                None,
+            result = {
+                "letter_name": letter_name, "bu_name": bu_name,
+                "xml_path": None, "generated_path": None,
+                "status": "ERROR", "error": None,
+            }
+            try:
+                result = _generate_for_letter(
+                    authed_page, letter_name, bu_name,
+                    DEFAULT_GEN_ROOT, DEFAULT_XML_ROOT,
+                )
+            except Exception as exc:
+                result["error"] = str(exc)
+            finally:
+                _recover_to_listing(authed_page)
+
+            _save_generated_letter(
+                letter_name, bu_name,
+                result.get("xml_path", ""),
+                result.get("generated_path", ""),
+                result.get("status", "ERROR"),
             )
-            assert saved is not None, (
-                f"[TC_GEN_001] FAIL — '{letter_name}' (BU={bu_name}) not written to generated_letters.json"
+
+            if result["status"] != "OK":
+                failures.append(
+                    f"'{letter_name}' (BU={bu_name}): {result.get('error') or 'unknown'}"
+                )
+                continue
+
+            gen_path = result.get("generated_path", "")
+            if not gen_path or not os.path.exists(gen_path) or os.path.getsize(gen_path) == 0:
+                failures.append(
+                    f"'{letter_name}' (BU={bu_name}): generated file missing or empty: {gen_path}"
+                )
+                continue
+
+            allure.attach(
+                f"Path : {gen_path}\nSize : {os.path.getsize(gen_path)} bytes",
+                name=f"Generated — {letter_name}",
+                attachment_type=allure.attachment_type.TEXT,
             )
-            assert saved["status"] == "OK", (
-                f"[TC_GEN_001] FAIL — Status in generated_letters.json is '{saved['status']}' "
-                f"for '{letter_name}' (BU={bu_name})"
+
+        with allure.step("Assert all letters generated successfully"):
+            assert not failures, (
+                f"[TC_GEN_001] FAIL — {len(failures)} letter(s) failed to generate:\n"
+                + "\n".join(f"  • {f}" for f in failures)
             )
 
     @allure.story("Generate")

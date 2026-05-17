@@ -1617,7 +1617,15 @@ def main(page):
     if running_under_pytest:
         excel_files = _parse_excel_list_from_env_or_cli(None)
         if not excel_files:
-            excel_files = ["unv2_unv3.xlsx"]
+            default = os.path.join(PROJECT_DIR, "unv2_unv3.xlsx")
+            if os.path.exists(default):
+                excel_files = ["unv2_unv3.xlsx"]
+            else:
+                pytest.skip(
+                    "unv2_unv3.xlsx not found in tests/ — "
+                    "set EXCEL_FILE env var to specify an Excel file to use."
+                )
+                return
         download_root = os.environ.get("DOWNLOAD_ROOT", DEFAULT_DOWNLOAD_ROOT)
         column  = os.environ.get("EXCEL_COLUMN", "actual")
         bu_name = os.environ.get("BU_NAME", "ANG DONOT USE")
