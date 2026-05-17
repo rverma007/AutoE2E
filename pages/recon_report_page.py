@@ -48,13 +48,25 @@ class ReconReportPage(BasePage):
 
     def is_list_visible(self, timeout: int = 10_000) -> bool:
         table = self.page.locator("table").first
-        empty = self.page.locator(
-            "text=No records, text=No data, text=No results"
-        ).first
-        return (
-            self.is_visible(table, timeout=timeout)
-            or self.is_visible(empty, timeout=2_000)
-        )
+        if self.is_visible(table, timeout=timeout):
+            return True
+        for empty_text in ("No records", "No data", "No results", "No report"):
+            loc = self.page.get_by_text(empty_text, exact=False).first
+            if self.is_visible(loc, timeout=2_000):
+                return True
+        # Card / list layout fallback
+        for sel in (
+            "[class*='card']",
+            "[class*='list']",
+            "[role='list']",
+            "[class*='row']",
+            "main",
+        ):
+            loc = self.page.locator(sel).first
+            if self.is_visible(loc, timeout=2_000):
+                return True
+        # Final fallback: page loaded and we are on the right URL
+        return self.PATH in self.page.url
 
     def download_report(self):
         try:

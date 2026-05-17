@@ -1,7 +1,7 @@
 # run_tests.ps1
 # Runs the full test suite in two stages:
-#   Stage 1 — letter type dependency chain (sequential, must preserve order)
-#   Stage 2 — all other modules (parallel, 4 workers)
+#   Stage 1 - letter type dependency chain (sequential, must preserve order)
+#   Stage 2 - all other modules (parallel, 4 workers)
 #
 # Usage:
 #   .\run_tests.ps1              # full run
@@ -30,7 +30,7 @@ $stage2Failed = $false
 if ($Stage -eq "1" -or $Stage -eq "all") {
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host "  STAGE 1 — Letter Type Chain (sequential)" -ForegroundColor Cyan
+    Write-Host "  STAGE 1 - Letter Type Chain (sequential)" -ForegroundColor Cyan
     Write-Host "  Order: ingestion -> download -> generate -> detail_verify" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
@@ -39,14 +39,14 @@ if ($Stage -eq "1" -or $Stage -eq "all") {
     if ($LASTEXITCODE -ne 0) {
         $stage1Failed = $true
         Write-Host ""
-        Write-Host "Stage 1 had failures — Stage 2 will still run." -ForegroundColor Yellow
+        Write-Host "Stage 1 had failures - Stage 2 will still run." -ForegroundColor Yellow
     }
 }
 
 if ($Stage -eq "2" -or $Stage -eq "all") {
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host "  STAGE 2 — All Other Modules (parallel, $Workers workers)" -ForegroundColor Cyan
+    Write-Host "  STAGE 2 - All Other Modules (parallel, $Workers workers)" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
 
@@ -75,8 +75,8 @@ if ($Stage -eq "2" -or $Stage -eq "all") {
     }
 }
 Write-Host ""
-Write-Host "  HTML report  : reports\sanity_report.html"
-Write-Host "  Allure       : allure serve reports\allure-results"
+Write-Host "  HTML report  : reports/sanity_report.html"
+Write-Host "  Allure       : allure serve reports/allure-results"
 Write-Host ""
 
 if ($stage1Failed -or $stage2Failed) { exit 1 } else { exit 0 }
