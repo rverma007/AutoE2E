@@ -132,7 +132,24 @@ def _search(page: Page, q: str, timeout_ms: int = 30_000):
             raise RuntimeError(f"No Data Found for '{q}'")
         if table_rows.count() > 0:
             txt = _clean(table_rows.first.inner_text(timeout=1_000)).lower()
-            if re.search(r"lt-\d+", txt) and all(t in txt for t in tokens):
+            # Also pull [title] attrs — cells are CSS-truncated so inner_text
+            # may be cut short (e.g. "MAPD Multiple Claim A..." not full name)
+            try:
+                title_txt = page.evaluate("""
+                    () => {
+                        const row = document.querySelector('table tbody tr');
+                        if (!row) return '';
+                        let t = '';
+                        row.querySelectorAll('[title]').forEach(
+                            e => { t += ' ' + (e.getAttribute('title') || ''); }
+                        );
+                        return t.toLowerCase();
+                    }
+                """) or ""
+            except Exception:
+                title_txt = ""
+            combined = txt + " " + title_txt
+            if re.search(r"lt-\d+", combined) and all(t in combined for t in tokens):
                 return
         page.wait_for_timeout(250)
 
@@ -402,11 +419,28 @@ class TestLetterTypeDetailVerify:
                     continue
                 lt_id = _open_detail(authed_page, letter_name)
                 authed_page.wait_for_timeout(2_000)
-                page_text = ""
+                # Pull textContent + input values + title attrs:
+                # the letter name lives in an editable <input>/<span> whose value
+                # is NOT included in document.body.textContent.
                 try:
-                    page_text = (authed_page.evaluate("() => document.body.textContent") or "").strip()
+                    page_text = authed_page.evaluate("""
+                        () => {
+                            let t = (document.body.innerText
+                                     || document.body.textContent || '');
+                            document.querySelectorAll('input, textarea').forEach(
+                                e => { t += ' ' + (e.value || ''); }
+                            );
+                            document.querySelectorAll('[title]').forEach(
+                                e => { t += ' ' + (e.getAttribute('title') || ''); }
+                            );
+                            return t;
+                        }
+                    """) or ""
                 except Exception:
-                    pass
+                    try:
+                        page_text = (authed_page.evaluate("() => document.body.textContent") or "")
+                    except Exception:
+                        page_text = ""
                 url_text = authed_page.url or ""
 
                 # Accept LT-ID from page text, URL, or the id captured from the listing row
