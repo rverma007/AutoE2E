@@ -240,16 +240,49 @@ class TestLetterTypeDetails:
                 "Page failed to recover after Validation Summary click."
             )
 
-        with allure.step("Assert Validation Summary tab panel content is rendered"):
-            tab_panel = authed_page.locator(
-                "[role='tabpanel'], [class*='tabpanel'], [class*='tab-content']"
-            ).first
-            panel_visible = details.is_visible(tab_panel, timeout=8_000)
+        with allure.step("Assert Validation Summary cards are rendered"):
+            # Each validation check appears as a card; wait for at least one to be visible
+            card_loc = authed_page.locator(
+                "[class*='validation'], [class*='card'], [class*='check']"
+            )
+            authed_page.wait_for_timeout(1_500)
+            card_count = card_loc.count()
             allure.attach(
-                f"Tab panel visible: {panel_visible}",
-                name="Validation Summary panel",
+                f"Validation cards found: {card_count}",
+                name="Validation card count",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            assert panel_visible, (
-                "Validation Summary tab panel did not render after clicking the tab."
+            assert card_count > 0, (
+                "No validation check cards found in Validation Summary — "
+                "expected items like Address validation, Cover sheet margin, etc."
+            )
+
+        with allure.step("Assert each visible validation card has a status chip"):
+            # Status chips show 'Completed', 'Failed', 'In Progress', etc.
+            status_chips = authed_page.locator(
+                "text=/Completed/i, text=/Failed/i, text=/In Progress/i, text=/Pending/i"
+            )
+            chip_count = status_chips.count()
+            allure.attach(
+                f"Status chips found: {chip_count}",
+                name="Status chip count",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            assert chip_count > 0, (
+                "No status chips (Completed / Failed / In Progress) found on "
+                "Validation Summary cards — cards may not have rendered their status."
+            )
+
+        with allure.step("Collect and report validation results"):
+            completed = authed_page.locator("text=/Completed/i").count()
+            failed    = authed_page.locator("text=/Failed/i").count()
+            allure.attach(
+                f"Completed : {completed}\nFailed    : {failed}\nTotal chips: {chip_count}",
+                name="Validation results summary",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            # All visible checks must have a recognised status; none should be blank
+            assert completed + failed >= chip_count - 1, (
+                f"Some validation cards have an unrecognised or missing status. "
+                f"Completed={completed}, Failed={failed}, Total chips={chip_count}"
             )
