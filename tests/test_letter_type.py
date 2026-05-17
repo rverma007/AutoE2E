@@ -193,6 +193,73 @@ class TestLetterTypeFilter:
 
 @allure.epic("Correspondence Application")
 @allure.feature("Letter Type")
+class TestLetterTypeSearch:
+    """Letter Type listing — search box functionality."""
+
+    @allure.story("Search")
+    @allure.title("Search box filters Letter Type results")
+    @allure.severity(allure.severity_level.NORMAL)
+    @allure.description(
+        "Type a character into the search box on the Letter Type listing page "
+        "and verify the page stays loaded and the table renders results."
+    )
+    def test_search_box_filters_results(self, letter_type_page: LetterTypePage):
+        with allure.step("Navigate to Letter Type listing"):
+            letter_type_page.open_direct()
+            assert letter_type_page.is_loaded(), "Letter Type page did not load."
+
+        with allure.step("Assert search box is visible"):
+            search_visible = letter_type_page.is_visible(
+                letter_type_page.search_box, timeout=8_000
+            )
+            allure.attach(
+                f"Search box visible: {search_visible}",
+                name="Search box",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            if not search_visible:
+                pytest.skip("Search box not visible on Letter Type listing page.")
+
+        with allure.step("Record row count before search"):
+            rows_before = letter_type_page.row_count()
+            allure.attach(
+                f"Rows before search: {rows_before}",
+                name="Pre-search count",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+
+        with allure.step("Type 'E' in search box and wait for results"):
+            letter_type_page.search_box.fill("E")
+            letter_type_page.wait_for_idle()
+
+        with allure.step("Assert page is still loaded and results are rendered"):
+            assert letter_type_page.is_loaded(timeout=10_000), (
+                "Letter Type page lost loaded state after typing in search box."
+            )
+            rows_after = letter_type_page.row_count()
+            allure.attach(
+                f"Rows after search: {rows_after}",
+                name="Post-search count",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            assert rows_after <= rows_before, (
+                f"Row count increased after search ({rows_before} → {rows_after}) — unexpected."
+            )
+
+        with allure.step("Clear search and verify results restore"):
+            letter_type_page.search_box.fill("")
+            letter_type_page.wait_for_idle()
+            rows_restored = letter_type_page.row_count()
+            allure.attach(
+                f"Rows after clear: {rows_restored}",
+                name="Post-clear count",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            assert rows_restored > 0, "No rows visible after clearing the search box."
+
+
+@allure.epic("Correspondence Application")
+@allure.feature("Letter Type")
 class TestLetterTypeDownload:
     """Letter Type listing — download functionality."""
 
