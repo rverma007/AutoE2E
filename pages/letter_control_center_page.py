@@ -64,20 +64,33 @@ class LetterControlCenterPage(BasePage):
     def download_csv_menuitem(self):
         return self.page.get_by_role("menuitem", name="Download Report (CSV)")
 
-    # Download button on the letter detail page (contained style)
+    # Split download button (⬇️ ▼) in the PDF viewer toolbar on the detail page.
+    # Clicking the chevron (▼) part opens the PDF / DOCX dropdown menu.
     @property
     def detail_download_button(self):
         return self.page.locator(
+            # ▼ chevron of MUI split ButtonGroup — opens format dropdown
+            "button:has(svg[data-testid='ArrowDropDownIcon']), "
+            # Last button in a ButtonGroup (chevron position)
+            ".MuiButtonGroup-root button:last-child, "
+            # aria/title fallbacks
+            "button[aria-label*='download' i], "
+            "button[title*='download' i], "
+            # MUI download icon variants
+            "button:has(svg[data-testid='FileDownloadIcon']), "
+            "button:has(svg[data-testid='DownloadIcon']), "
+            "button:has(svg[data-testid='GetAppIcon']), "
+            # Last resort: any contained button
             ".MuiButtonBase-root.MuiButton-root.MuiButton-contained"
         ).first
 
     @property
     def pdf_menuitem(self):
-        return self.page.get_by_role("menuitem", name="PDF")
+        return self.page.get_by_role("menuitem", name=re.compile(r"^pdf$", re.IGNORECASE))
 
     @property
     def docx_menuitem(self):
-        return self.page.get_by_role("menuitem", name="DOCX")
+        return self.page.get_by_role("menuitem", name=re.compile(r"^docx$", re.IGNORECASE))
 
     @property
     def validation_summary_tab(self):
@@ -313,10 +326,28 @@ class LetterControlCenterPage(BasePage):
             self.log.warning(f"Bulk CSV download not captured: {exc}")
             return None
 
-    def download_pdf(self):
-        """On the letter detail page: click contained button → PDF menuitem."""
+    def _open_download_menu(self) -> bool:
+        """Click the ▼ chevron of the split download button to open the format menu."""
+        btn = self.detail_download_button
+        if not self.is_visible(btn, timeout=8_000):
+            return False
+        self.safe_click(btn, "Download split-button chevron")
+        # Wait for the dropdown menu to appear
         try:
-            self.safe_click(self.detail_download_button, "Download menu (detail)")
+            self.page.wait_for_selector(
+                "[role='menu'], [role='listbox'], .MuiMenu-root",
+                state="visible", timeout=5_000
+            )
+        except Exception:
+            pass
+        self.page.wait_for_timeout(300)
+        return True
+
+    def download_pdf(self):
+        """On the letter detail page: open download menu → click PDF."""
+        try:
+            if not self._open_download_menu():
+                return None
             with self.page.expect_download(timeout=30_000) as dl:
                 self.safe_click(self.pdf_menuitem, "PDF")
             return dl.value
@@ -325,9 +356,10 @@ class LetterControlCenterPage(BasePage):
             return None
 
     def download_docx(self):
-        """On the letter detail page: click contained button → DOCX menuitem."""
+        """On the letter detail page: open download menu → click DOCX."""
         try:
-            self.safe_click(self.detail_download_button, "Download menu (detail)")
+            if not self._open_download_menu():
+                return None
             with self.page.expect_download(timeout=30_000) as dl:
                 self.safe_click(self.docx_menuitem, "DOCX")
             return dl.value
