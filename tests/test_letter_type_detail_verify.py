@@ -148,11 +148,18 @@ def _open_detail(page: Page, letter_name: str) -> str:
     while page.evaluate("() => Date.now()") - start < 20_000:
         try:
             current_url = page.url or ""
-            if current_url != url_before and "letter-type" in current_url:
+            if current_url != url_before and (
+                "letter-type-detail" in current_url
+                or "letterTypeId" in current_url
+                or "letter-type" in current_url
+            ):
                 return id_txt
             back = page.locator(
-                "button[aria-label*='back' i], [data-testid='ArrowBackIcon'], "
-                "[data-testid='KeyboardBackspaceIcon'], [data-testid='ArrowBackIosIcon']"
+                "button[aria-label*='back' i], "
+                "button:has(svg[data-testid='ArrowBackIcon']), "
+                "button:has(svg[data-testid='ArrowBackIosNewIcon']), "
+                "[data-testid='ArrowBackIcon'], "
+                "[data-testid='ArrowBackIosNewIcon']"
             ).first
             if back.count() > 0 and back.is_visible(timeout=200):
                 return id_txt
@@ -164,16 +171,28 @@ def _open_detail(page: Page, letter_name: str) -> str:
 
 def _find_back_arrow(page: Page):
     candidates = [
+        # aria-label variants
         page.locator("button[aria-label*='back' i]"),
         page.locator("a[aria-label*='back' i]"),
+        page.locator("button[title*='back' i]"),
+        # MUI data-testid icon variants (svg inside a button)
+        page.locator("button:has(svg[data-testid='ArrowBackIcon'])"),
+        page.locator("button:has(svg[data-testid='ArrowBackIosIcon'])"),
+        page.locator("button:has(svg[data-testid='ArrowBackIosNewIcon'])"),
+        page.locator("button:has(svg[data-testid='KeyboardBackspaceIcon'])"),
+        page.locator("button:has(svg[data-testid='ChevronLeftIcon'])"),
+        # direct data-testid on the element itself
         page.locator("[data-testid='ArrowBackIcon']"),
         page.locator("[data-testid='ArrowBackIosIcon']"),
+        page.locator("[data-testid='ArrowBackIosNewIcon']"),
         page.locator("[data-testid='KeyboardBackspaceIcon']"),
         page.locator("[data-testid='ChevronLeftIcon']"),
+        # The "< Letter Type Detail" heading back link — the < is often a sibling button
+        page.locator("h1 button, h2 button").first,
+        page.locator("header button").first,
+        # text fallbacks
         page.locator("button:has-text('Back')"),
         page.locator("a:has-text('Back')"),
-        page.locator("button[title*='back' i]"),
-        page.locator("svg").filter(has=page.locator("path[d^='M20 11H7.83']")),
     ]
     for loc in candidates:
         try:
@@ -201,17 +220,24 @@ def _go_back_to_listing(page: Page):
 
 
 _FILTER_BTN_SELECTORS = [
+    # text-based
     "button[aria-label='Filters']",
     "button[aria-label='Filter']",
     "button[aria-label*='filter' i]",
     "button[title*='filter' i]",
     "button:has-text('Filters')",
     "button:has-text('Filter')",
+    # data-testid
     "[data-testid*='filter' i]",
+    "[data-testid='FilterListIcon']",
+    "[data-testid='TuneIcon']",
+    # MUI icon buttons — the svg icon's data-testid sits inside a button
+    "button:has(svg[data-testid='FilterListIcon'])",
+    "button:has(svg[data-testid='TuneIcon'])",
+    "button:has(svg[data-testid*='Filter' i])",
+    "button:has(svg[data-testid*='Tune' i])",
+    # class-based fallback
     "[class*='filter' i] button",
-    "button svg[data-testid*='filter' i]",
-    "button svg[data-testid='FilterListIcon']",
-    "button svg[data-testid='TuneIcon']",
 ]
 
 
