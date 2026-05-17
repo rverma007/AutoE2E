@@ -116,40 +116,48 @@ def _open_detail(page: Page, letter_name: str) -> str:
     """Click the first matching row and wait for the detail page. Returns LT-ID text."""
     table_rows = page.locator("table tbody tr")
     row = table_rows.first
-    id_cell = None
-    id_txt  = ""
-    for nth in [1, 0]:
-        try:
-            cell = row.locator("td").nth(nth)
-            if cell.count() > 0 and cell.is_visible(timeout=1_500):
-                t = _clean(cell.inner_text(timeout=1_500))
-                if re.match(r"^LT-\d+", t):
-                    id_txt = t; id_cell = cell; break
-        except Exception:
-            pass
-    if not id_txt:
+    id_txt = ""
+    try:
         m = re.search(r"LT-\d+", _clean(row.inner_text(timeout=1_000)))
         if m:
             id_txt = m.group(0)
-    row.scroll_into_view_if_needed(); page.wait_for_timeout(300)
-    try:
-        (id_cell or row).click(timeout=5_000)
     except Exception:
-        (id_cell or row).click(force=True, timeout=5_000)
-    # wait for detail page
+        pass
+
+    url_before = page.url
+    row.scroll_into_view_if_needed()
+    page.wait_for_timeout(300)
+
+    # Prefer clicking an <a> link inside the row (navigates via href);
+    # fall back to clicking the whole row (onClick handler).
+    link = row.locator("a").first
+    try:
+        if link.count() > 0 and link.is_visible(timeout=500):
+            link.click(timeout=5_000)
+        else:
+            row.click(timeout=5_000)
+    except Exception:
+        try:
+            row.click(force=True, timeout=5_000)
+        except Exception:
+            pass
+
+    # Wait for detail page: URL changed from listing AND still contains letter-type
+    # OR a back-arrow button appeared (detail page rendered).
     start = page.evaluate("() => Date.now()")
     while page.evaluate("() => Date.now()") - start < 20_000:
         try:
-            if "/letter-type/" in (page.url or ""):
+            current_url = page.url or ""
+            if current_url != url_before and "letter-type" in current_url:
+                return id_txt
+            back = page.locator(
+                "button[aria-label*='back' i], [data-testid='ArrowBackIcon'], "
+                "[data-testid='KeyboardBackspaceIcon'], [data-testid='ArrowBackIosIcon']"
+            ).first
+            if back.count() > 0 and back.is_visible(timeout=200):
                 return id_txt
         except Exception:
             pass
-        back = page.locator(
-            "button[aria-label*='back' i], [data-testid='ArrowBackIcon'], "
-            "[data-testid='KeyboardBackspaceIcon']"
-        ).first
-        if back.count() and back.is_visible(timeout=200):
-            return id_txt
         page.wait_for_timeout(300)
     raise RuntimeError(f"Detail page did not open for '{letter_name}'")
 
@@ -187,17 +195,42 @@ def _go_back_to_listing(page: Page):
     page.wait_for_timeout(500)
 
 
+_FILTER_BTN_SELECTORS = [
+    "button[aria-label='Filters']",
+    "button[aria-label='Filter']",
+    "button:has-text('Filters')",
+    "button:has-text('Filter')",
+    "[data-testid*='filter' i]",
+]
+
+
+def _get_filter_btn(page: Page, timeout_ms: int = 20_000):
+    """Return the first visible Filters button, trying multiple selectors."""
+    import time as _t
+    deadline = _t.monotonic() + timeout_ms / 1000
+    while _t.monotonic() < deadline:
+        for sel in _FILTER_BTN_SELECTORS:
+            try:
+                loc = page.locator(sel).first
+                if loc.count() > 0 and loc.is_visible(timeout=600):
+                    return loc
+            except Exception:
+                pass
+        page.wait_for_timeout(500)
+    raise RuntimeError(
+        f"Filters button not found after {timeout_ms}ms — tried: {_FILTER_BTN_SELECTORS}"
+    )
+
+
 def _apply_bu_filter(page: Page, bu_name: str):
     """Open the Filters panel and select the given BU."""
-    page.wait_for_selector("xpath=//button[@aria-label='Filters']",
-                           state="visible", timeout=20_000)
+    filter_btn = _get_filter_btn(page, timeout_ms=20_000)
     try:
         page.wait_for_selector(".MuiSkeleton-root", state="hidden", timeout=10_000)
     except Exception:
         pass
     page.wait_for_timeout(400)
-    page.locator("xpath=//button[@aria-label='Filters']").first.click(
-        force=True, timeout=10_000)
+    filter_btn.click(force=True, timeout=10_000)
     page.wait_for_selector("text=Filters", state="visible", timeout=10_000)
     page.wait_for_timeout(500)
 
@@ -221,8 +254,7 @@ def _apply_bu_filter(page: Page, bu_name: str):
 def _clear_bu_filter(page: Page):
     """Open the Filters panel and reset the BU back to 'All Business Units'."""
     try:
-        page.locator("xpath=//button[@aria-label='Filters']").first.click(
-            force=True, timeout=8_000)
+        _get_filter_btn(page, timeout_ms=8_000).click(force=True, timeout=8_000)
         page.wait_for_selector("text=Filters", state="visible", timeout=8_000)
         page.wait_for_timeout(400)
         for loc in (
