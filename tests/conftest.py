@@ -459,6 +459,28 @@ def pytest_runtest_makereport(item, call):
             rep.extras = extras
 
 
+_LETTER_TYPE_ORDER = [
+    "test_letter_type_ingestion.py",
+    "test_download_letter.py",
+    "test_generate_letter.py",
+    "test_letter_type_detail_verify.py",
+]
+
+
+def pytest_collection_modifyitems(items):
+    def _order_key(item):
+        fname = os.path.basename(item.fspath)
+        try:
+            return _LETTER_TYPE_ORDER.index(fname)
+        except ValueError:
+            return len(_LETTER_TYPE_ORDER)
+
+    letter_items = [i for i in items if os.path.basename(i.fspath) in _LETTER_TYPE_ORDER]
+    other_items = [i for i in items if os.path.basename(i.fspath) not in _LETTER_TYPE_ORDER]
+    letter_items.sort(key=_order_key)
+    items[:] = letter_items + other_items
+
+
 def pytest_configure(config):
     config.addinivalue_line("markers", "sanity: quick smoke / sanity checks")
     config.addinivalue_line("markers", "regression: full regression suite")
