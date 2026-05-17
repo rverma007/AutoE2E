@@ -116,22 +116,56 @@ All settings are read from `.env`. **Never commit `.env`** — it is gitignored.
 
 ## Running Tests
 
-> **Important:** Always run from `D:\AutoPythone2e`.  
-> The `-p no:xdist` flag disables parallel execution — **required** when running the letter type chain so tests execute in dependency order.
+> **Important:** Always run from `D:\AutoPythone2e`.
 
-### Run everything
+---
+
+### Recommended — two-stage script (parallel where safe, ordered where required)
+
+```powershell
+.\run_tests.ps1
+```
+
+This is the **recommended way** to run everything. The script handles the dependency order automatically:
+
+```
+Stage 1 — sequential (guaranteed order):
+  [1] test_letter_type_ingestion.py    → runs fully, writes ingested_letters.json
+  [2] test_download_letter.py          → starts only after ingestion completes
+  [3] test_generate_letter.py          → starts only after download completes
+  [4] test_letter_type_detail_verify.py → starts only after generate completes
+
+Stage 2 — parallel (4 workers):
+  test_dashboard.py, test_approval_workflow.py, test_audit_logger.py,
+  test_component_library.py, test_letter_control_center.py,
+  test_navigation.py, test_settings.py, test_sanity.py ... all at once
+```
+
+At the end the script prints a pass/fail summary and the report locations.
+
+**Script options:**
+
+| Command | What it does |
+|---|---|
+| `.\run_tests.ps1` | Full run — Stage 1 then Stage 2 |
+| `.\run_tests.ps1 -Stage 1` | Letter type chain only (sequential) |
+| `.\run_tests.ps1 -Stage 2` | All other modules only (parallel) |
+| `.\run_tests.ps1 -Workers 2` | Change parallel worker count (default 4) |
+
+> **Why not just `-n 4` for everything?**  
+> With parallel execution `ingested_letters.json` is wiped at run start and workers race — download or generate starts before ingestion finishes, finds an empty JSON, and fails. The two-stage script eliminates this race completely.
+
+---
+
+### Run everything sequentially (simple, always safe)
 
 ```powershell
 pytest tests/ -p no:xdist -v
 ```
 
-### Run only the sanity suite
+Use this for debugging or when you need a simple single command. Slower than the script because no parallelism, but guaranteed correct order via the `conftest.py` ordering hook.
 
-```powershell
-pytest tests/ -m sanity -p no:xdist -v
-```
-
-### Run the letter type dependency chain only
+### Run only the letter type chain
 
 ```powershell
 pytest tests/test_letter_type_ingestion.py tests/test_download_letter.py tests/test_generate_letter.py tests/test_letter_type_detail_verify.py -p no:xdist -v
@@ -149,24 +183,18 @@ pytest tests/test_dashboard.py -v
 pytest tests/test_dashboard.py::TestDashboard::test_dashboard_page_loads -v
 ```
 
-### Run with parallel execution (non-ordered modules only)
-
-```powershell
-pytest tests/ -n 4 --dist loadfile -v
-```
-
 ### Headed browser (watch the browser while tests run)
 
 Set `HEADLESS=false` in `.env`, then:
 
 ```powershell
-pytest tests/ -p no:xdist -v
+.\run_tests.ps1
 ```
 
-Or override inline:
+Or override inline for a quick single-file run:
 
 ```powershell
-$env:HEADLESS="false"; pytest tests/ -p no:xdist -v
+$env:HEADLESS="false"; pytest tests/test_letter_type.py -p no:xdist -v
 ```
 
 ### Slow-motion + headed (step-by-step debugging)
@@ -178,7 +206,8 @@ $env:SLOW_MO="500"; $env:HEADLESS="false"; pytest tests/test_navigation.py -p no
 ### With Allure report generation
 
 ```powershell
-pytest tests/ -p no:xdist -v --alluredir=reports/allure-results
+# The script already writes allure results automatically.
+# To view after any run:
 allure serve reports/allure-results
 ```
 
@@ -393,7 +422,13 @@ The app shows a floating chat popup that can intercept clicks. `BasePage` inject
 
 **`unrecognized arguments: -n --dist loadfile`**
 
-The `-n` / `--dist` flags must not appear in `pytest.ini` `addopts`. They were removed. Use them explicitly on the command line when you want parallel runs: `pytest tests/ -n 4 --dist loadfile -v`.
+The `-n` / `--dist` flags must not appear in `pytest.ini` `addopts`. They were removed. Use `.\run_tests.ps1` for the recommended two-stage run, or pass `-n 4 --dist loadfile` explicitly on the command line for non-chain modules only.
+
+---
+
+**`ingested_letters.json` is empty `[]` after the run**
+
+You ran with `-n 4` (full parallel). With parallel execution all workers start simultaneously — download or generate finds an empty JSON because ingestion hasn't finished yet. Fix: use `.\run_tests.ps1` which runs the chain sequentially in Stage 1 before launching parallel Stage 2. Never use `-n 4` directly across the full test suite.
 
 ---
 
