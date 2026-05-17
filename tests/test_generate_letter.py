@@ -528,10 +528,14 @@ class TestGenerateLetter:
 
     @pytest.fixture(scope="class", autouse=True)
     def _reset_generated_json(self):
-        """Clear generated_letters.json before each class run."""
+        """Clear generated_letters.json and downloaded/generated/ before each class run."""
+        import shutil
         os.makedirs(_TESTDATA_DIR, exist_ok=True)
         with open(_GENERATED_FILE, "w", encoding="utf-8") as f:
             json.dump([], f)
+        if os.path.isdir(DEFAULT_GEN_ROOT):
+            shutil.rmtree(DEFAULT_GEN_ROOT)
+        os.makedirs(DEFAULT_GEN_ROOT, exist_ok=True)
         yield
 
     @allure.story("Generate")
