@@ -86,11 +86,21 @@ class LetterControlCenterPage(BasePage):
 
     @property
     def pdf_menuitem(self):
-        return self.page.get_by_role("menuitem", name=re.compile(r"^pdf$", re.IGNORECASE))
+        return self.page.locator(
+            "[role='menuitem']:has-text('PDF'), "
+            "[role='option']:has-text('PDF'), "
+            "li:has-text('PDF'), "
+            "button:has-text('PDF')"
+        ).first
 
     @property
     def docx_menuitem(self):
-        return self.page.get_by_role("menuitem", name=re.compile(r"^docx$", re.IGNORECASE))
+        return self.page.locator(
+            "[role='menuitem']:has-text('DOCX'), "
+            "[role='option']:has-text('DOCX'), "
+            "li:has-text('DOCX'), "
+            "button:has-text('DOCX')"
+        ).first
 
     @property
     def validation_summary_tab(self):
