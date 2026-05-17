@@ -24,8 +24,12 @@ class LetterImportExportPage(BasePage):
     @property
     def export_button(self):
         return self.page.locator(
+            "button:has-text('Export All'), "
+            "button:has-text('Export ZIP'), "
             "button:has-text('Export'), "
-            "[data-testid='export-btn']"
+            "button:has-text('Download'), "
+            "[data-testid='export-btn'], "
+            "[data-testid*='export' i]"
         ).first
 
     @property
