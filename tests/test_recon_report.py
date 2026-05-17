@@ -55,11 +55,6 @@ class TestReconReport:
                 name="Report list",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            if not list_visible:
-                pytest.skip(
-                    "Recon Report page loaded but no list/table/card area detected — "
-                    "may require a date filter selection before records appear."
-                )
 
         with allure.step("Check for Download Report button"):
             dl_visible = recon_report_page.is_visible(
