@@ -48,11 +48,11 @@ class TestLetterImportExport:
             )
 
     @allure.story("Export")
-    @allure.title("[TC_SM_025] Export generates a valid ZIP file")
+    @allure.title("[TC_SM_025] Export saves letter type to server path containing 'netapp'")
     @allure.severity(allure.severity_level.NORMAL)
     @allure.description(
-        "Select an approved letter type, click Export, and verify that a valid "
-        "ZIP file downloads successfully."
+        "Select the first letter type row, click 'Export Letter Type', wait for "
+        "'Export Complete' panel, then assert the server file path contains 'netapp'."
     )
     def test_export_generates_zip(self, authed_page):
         page = LetterImportExportPage(authed_page)
@@ -61,128 +61,53 @@ class TestLetterImportExport:
             page.open_direct()
             assert page.is_loaded(timeout=15_000), "Import/Export page did not load."
 
-        with allure.step("Assert Export button is present"):
+        with allure.step("Select first letter type row"):
+            selected = page.select_first_row()
+            allure.attach(
+                f"First row selected: {selected}",
+                name="Row selection",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            if not selected:
+                pytest.skip("No letter type rows available to select for export.")
+
+        with allure.step("Assert Export button is active"):
             export_visible = page.is_export_button_visible(timeout=8_000)
             allure.attach(
                 f"Export button visible: {export_visible}",
-                name="Export button availability",
+                name="Export button",
                 attachment_type=allure.attachment_type.TEXT,
             )
             if not export_visible:
-                pytest.skip(
-                    "Export button not found on Import/Export page — "
-                    "may require selecting a letter type first, or the button "
-                    "label differs in this environment."
-                )
+                pytest.skip("Export button not found after selecting a row.")
 
-        with allure.step("Click Export once — listen for file download and all API responses"):
-            download_captured = False
-            api_captured = False
-            api_status = None
-            api_url = None
-            api_content_type = None
-            all_responses: list = []
+        with allure.step("Click Export Letter Type"):
+            page.click_export()
 
-            _FILE_CONTENT_TYPES = (
-                "text/csv", "application/csv",
-                "application/vnd.ms-excel",
-                "application/vnd.openxmlformats",
-                "application/pdf",
-                "application/zip",
-                "application/octet-stream",
-                "application/json",
-                "application/xml", "text/xml",
-            )
-            _DOWNLOAD_URL_KEYWORDS = (
-                "download", "export", "import", "letter-type", "template",
-            )
-
-            def _on_response(r) -> None:
-                try:
-                    all_responses.append(r)
-                except Exception:
-                    pass
-
-            page.page.on("response", _on_response)
-            try:
-                with page.page.expect_download(timeout=15_000) as dl_info:
-                    page.safe_click(page.export_button, "Export")
-                dl = dl_info.value
-                filename, saved_path = page.save_download(dl, "letter_export")
-                allure.attach(
-                    f"File name : {filename}\nSaved path: {saved_path}",
-                    name="Export download details",
-                    attachment_type=allure.attachment_type.TEXT,
-                )
-                page.allure_attach_file(saved_path, filename)
-                download_captured = True
-                assert filename, "Export triggered but filename is empty."
-                assert filename.lower().endswith((".zip", ".json", ".xml")), (
-                    f"Unexpected export file extension: {filename}"
-                )
-            except AssertionError:
-                raise
-            except Exception:
-                try:
-                    page.page.wait_for_timeout(4_000)
-                except Exception:
-                    pass
-            finally:
-                page.page.remove_listener("response", _on_response)
-
-            if not download_captured:
-                for r in all_responses:
-                    try:
-                        if r.status not in (200, 201, 202):
-                            continue
-                        ct = (r.header_value("content-type") or "").lower()
-                        cd = r.header_value("content-disposition") or ""
-                        url_lower = r.url.lower()
-                        is_file_ct = bool(cd) or any(t in ct for t in _FILE_CONTENT_TYPES)
-                        is_download_url = any(k in url_lower for k in _DOWNLOAD_URL_KEYWORDS)
-                        if is_file_ct or is_download_url:
-                            api_status = r.status
-                            api_url = r.url
-                            api_content_type = ct
-                            api_captured = True
-                            break
-                    except Exception:
-                        pass
-
-                if not api_captured:
-                    resp_log = "\n".join(
-                        f"[{r.status}] {r.url}  ct={r.header_value('content-type') or ''}"
-                        for r in all_responses
-                    ) or "(no responses captured)"
-                    allure.attach(
-                        resp_log,
-                        name="All network responses after button click",
-                        attachment_type=allure.attachment_type.TEXT,
-                    )
-
+        with allure.step("Wait for Export Complete"):
+            complete = page.is_export_complete(timeout=30_000)
             allure.attach(
-                f"File download captured : {download_captured}\n"
-                f"API response captured  : {api_captured}\n"
-                f"API status             : {api_status}\n"
-                f"API content-type       : {api_content_type}\n"
-                f"API URL                : {api_url}\n"
-                f"Total responses seen   : {len(all_responses)}",
-                name="Export result",
+                f"Export Complete visible: {complete}",
+                name="Export status",
                 attachment_type=allure.attachment_type.TEXT,
             )
+            assert complete, (
+                "Export did not complete — 'Export Complete' panel not visible within 30 s."
+            )
 
-        with allure.step("Assert export was initiated"):
-            if api_captured:
-                assert api_status in (200, 201, 202), (
-                    f"Export API returned unexpected status: {api_status} — URL: {api_url}"
-                )
-            else:
-                assert download_captured, (
-                    "Export button was clicked but neither a browser file download "
-                    "nor an API response with a file content-type / content-disposition "
-                    "header was captured. Check the 'All network responses' attachment "
-                    "in the Allure report to see the actual API URL and content-type."
-                )
+        with allure.step("Assert server file path contains 'netapp'"):
+            file_path = page.get_export_file_path()
+            allure.attach(
+                f"Export file path: {file_path}",
+                name="Export file path",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            assert file_path, (
+                "Export file path not found in success notification."
+            )
+            assert "netapp" in file_path.lower(), (
+                f"Expected 'netapp' in export file path, got: {file_path!r}"
+            )
 
     @allure.story("Import")
     @allure.title("[TC_SM_026] Approved ZIP import works")
