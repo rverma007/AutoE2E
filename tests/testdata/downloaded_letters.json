@@ -1,0 +1,14 @@
+[
+  {
+    "letter_name": "MAPD Multiple Claim ACK68UY",
+    "bu_name": "ANG",
+    "pdf_path": "D:\\AutoPythone2e\\tests\\downloaded\\pdf_docx_downloads\\MAPD_Multiple_Claim_ACK68UY_ANG.pdf",
+    "docx_path": "D:\\AutoPythone2e\\tests\\downloaded\\pdf_docx_downloads\\MAPD_Multiple_Claim_ACK68UY_ANG.docx"
+  },
+  {
+    "letter_name": "MHCA Approval05IQ",
+    "bu_name": "UM",
+    "pdf_path": "D:\\AutoPythone2e\\tests\\downloaded\\pdf_docx_downloads\\MHCA_Approval05IQ_UM.pdf",
+    "docx_path": "D:\\AutoPythone2e\\tests\\downloaded\\pdf_docx_downloads\\MHCA_Approval05IQ_UM.docx"
+  }
+]

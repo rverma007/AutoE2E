@@ -1,0 +1,16 @@
+[
+  {
+    "letter_name": "MAPD Multiple Claim ACK68UY",
+    "bu_name": "ANG",
+    "xml_path": "D:\\AutoPythone2e\\test_xml\\CA_Pega AnG (1).xml",
+    "generated_path": "D:\\AutoPythone2e\\tests\\downloaded\\generated\\MAPD_Multiple_Claim_ACK68UY.pdf",
+    "status": "OK"
+  },
+  {
+    "letter_name": "MHCA Approval05IQ",
+    "bu_name": "UM",
+    "xml_path": "D:\\AutoPythone2e\\test_xml\\UM-LTR-1778490508970463.xml",
+    "generated_path": "D:\\AutoPythone2e\\tests\\downloaded\\generated\\MHCA_Approval05IQ.pdf",
+    "status": "OK"
+  }
+]
