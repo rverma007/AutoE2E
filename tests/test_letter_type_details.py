@@ -138,12 +138,16 @@ class TestLetterTypeDetails:
                 "Page failed to recover after Make Current action."
             )
 
-    @allure.story("Generate Test Letter")
-    @allure.title("[TC_SM_016] Letter type: Generate test letter with XML upload")
+    @allure.story("Generate Test Letter + Validation Summary")
+    @allure.title("[TC_SM_016 + TC_SM_017] Generate test letter and verify Validation Summary")
     @allure.severity(allure.severity_level.CRITICAL)
     @allure.description(
-        "Click 'Generate Test Letter' on a letter type detail page, upload an XML "
-        "member data file, click Generate, and verify the action completes."
+        "Click 'Generate Test Letter', upload an XML member data file, click Generate, "
+        "then immediately open the Validation Summary tab and verify:\n"
+        "  • Validation check cards are rendered (Address validation, Cover sheet "
+        "    margin, Inserts margin, Insert compatibility, etc.)\n"
+        "  • Each card shows a Completed or Failed status.\n\n"
+        "TC_SM_017 is merged here because validation data only exists after generation."
     )
     def test_generate_test_letter(self, authed_page, xml_file):
         listing = LetterTypePage(authed_page)
@@ -170,7 +174,7 @@ class TestLetterTypeDetails:
                     name="Generate Test Letter note",
                     attachment_type=allure.attachment_type.TEXT,
                 )
-                return  # pass: button not available for this record
+                return
 
         with allure.step("Upload XML and confirm generation"):
             uploaded = details.upload_xml_and_generate(xml_file)
@@ -181,9 +185,9 @@ class TestLetterTypeDetails:
                     name="Upload note",
                     attachment_type=allure.attachment_type.TEXT,
                 )
-                return  # pass: file input not accessible via automation
+                return
 
-        with allure.step("Assert page is still in a valid state"):
+        with allure.step("Assert page is still in a valid state after generation"):
             allure.attach(
                 f"URL after generation: {authed_page.url}",
                 name="Post-generation URL",
@@ -198,55 +202,33 @@ class TestLetterTypeDetails:
                 "Backend error / validation error visible after test letter generation."
             )
 
-    @allure.story("Validation Summary")
-    @allure.title("[TC_SM_017] Validation Summary executes successfully")
-    @allure.severity(allure.severity_level.NORMAL)
-    @allure.description(
-        "Navigate to the letter type detail page and open the Validation Summary "
-        "tab/section. Verify it loads without errors."
-    )
-    def test_validation_summary(self, authed_page):
-        listing = LetterTypePage(authed_page)
-        details = LetterTypeDetailsPage(authed_page)
-
-        with allure.step("Open listing and navigate to first record"):
-            listing.open_direct()
-            assert listing.is_loaded(), "Letter Type listing did not load."
-            assert listing.row_count() > 0, "No rows to click."
-            details.click_first_row(listing)
-            assert details.is_loaded(timeout=20_000), "Letter Type details page did not load."
-
-        with allure.step("Check Validation Summary tab availability"):
+        # ── TC_SM_017: Validation Summary (only valid after generation) ────────
+        with allure.step("[TC_SM_017] Open Validation Summary tab"):
             vs_visible = details.is_validation_summary_visible(timeout=8_000)
             allure.attach(
                 f"Validation Summary tab visible: {vs_visible}",
-                name="Validation Summary availability",
+                name="Validation Summary tab",
                 attachment_type=allure.attachment_type.TEXT,
             )
             if not vs_visible:
                 allure.attach(
-                    "Validation Summary tab not visible — this record may not have "
-                    "a generated letter or the tab requires a specific data state.",
+                    "Validation Summary tab not visible after generation — "
+                    "the tab may require the page to reload.",
                     name="Validation Summary note",
                     attachment_type=allure.attachment_type.TEXT,
                 )
-                return  # pass: tab only appears with generated letter data
-
-        with allure.step("Click Validation Summary"):
+                return
             details.click_validation_summary()
-
-        with allure.step("Assert page is still loaded after clicking Validation Summary"):
             assert details.is_loaded(timeout=10_000), (
-                "Page failed to recover after Validation Summary click."
+                "Page lost loaded state after clicking Validation Summary."
             )
 
-        with allure.step("Assert Validation Summary section has rendered content"):
-            # Wait for the active tab panel to appear (tab content loads via API call)
+        with allure.step("[TC_SM_017] Assert validation check cards are rendered"):
+            # Wait for tab panel content to load
             try:
                 authed_page.wait_for_selector(
                     "[role='tabpanel']:not([hidden]), "
-                    "[class*='tabpanel'], [class*='TabPanel'], "
-                    "[class*='validation' i], [class*='check' i], [class*='result' i]",
+                    "[class*='validation'], [class*='check'], [class*='result']",
                     state="visible",
                     timeout=10_000,
                 )
@@ -254,59 +236,59 @@ class TestLetterTypeDetails:
                 pass
             authed_page.wait_for_timeout(1_000)
 
-            # Try progressively broader selectors to count rendered items —
-            # MUI may use Grid items, list items, table rows, or custom classes.
             _CARD_SELECTORS = [
-                "[class*='validation' i]",
-                "[class*='check' i]",
-                "[class*='result' i]",
+                "[class*='validation']",
+                "[class*='check']",
+                "[class*='result']",
                 "[role='tabpanel']:not([hidden]) li",
                 "[role='tabpanel']:not([hidden]) tr",
                 "[role='tabpanel']:not([hidden]) [class*='Mui']",
                 "[role='listitem']",
-                "[class*='MuiCard'], [class*='MuiPaper']:not([class*='MuiTableContainer'])",
+                "[class*='MuiCard']",
+                "[class*='MuiPaper']",
             ]
             card_count = 0
             matched_sel = ""
             for sel in _CARD_SELECTORS:
-                n = authed_page.locator(sel).count()
+                try:
+                    n = authed_page.locator(sel).count()
+                except Exception:
+                    n = 0
                 if n > 0:
                     card_count = n
                     matched_sel = sel
                     break
 
             allure.attach(
-                f"Validation items found: {card_count}\nMatched selector: {matched_sel or 'none'}",
+                f"Validation cards found: {card_count}\nSelector: {matched_sel or 'none'}",
                 name="Validation card count",
                 attachment_type=allure.attachment_type.TEXT,
             )
             assert card_count > 0, (
-                "Validation Summary tab panel rendered no content — "
-                "expected validation check items but found none with any known selector."
+                "Validation Summary rendered no cards after letter generation. "
+                "Expected items like Address validation, Cover sheet margin, etc."
             )
 
-        with allure.step("Assert each visible validation card has a status chip"):
-            status_chips = authed_page.locator(
-                "text=/Completed/i, text=/Failed/i, text=/In Progress/i, text=/Pending/i, "
-                "[class*='MuiChip'], [class*='chip' i], [class*='badge' i]"
-            )
-            chip_count = status_chips.count()
+        with allure.step("[TC_SM_017] Assert cards show Completed or Failed status"):
+            # Keep text= regex selectors separate from CSS selectors —
+            # mixing them in one comma string causes Playwright regex parse errors.
+            completed   = authed_page.locator("text=/Completed/i").count()
+            failed      = authed_page.locator("text=/Failed/i").count()
+            in_progress = authed_page.locator("text=/In Progress/i").count()
+            chip_count  = authed_page.locator(
+                "[class*='MuiChip'], [class*='chip'], [class*='badge']"
+            ).count()
+
             allure.attach(
-                f"Status chips found: {chip_count}",
-                name="Status chip count",
+                f"Completed  : {completed}\n"
+                f"Failed     : {failed}\n"
+                f"In Progress: {in_progress}\n"
+                f"Chip elements: {chip_count}",
+                name="Validation status summary",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            if chip_count == 0:
-                allure.attach(
-                    "No status chip elements found — UI may render status differently.",
-                    name="Status chip note",
-                    attachment_type=allure.attachment_type.TEXT,
-                )
-            else:
-                completed = authed_page.locator("text=/Completed/i").count()
-                failed    = authed_page.locator("text=/Failed/i").count()
-                allure.attach(
-                    f"Completed : {completed}\nFailed    : {failed}\nTotal chips: {chip_count}",
-                    name="Validation results summary",
-                    attachment_type=allure.attachment_type.TEXT,
-                )
+            assert completed > 0 or failed > 0 or in_progress > 0, (
+                f"Validation cards rendered ({card_count}) but none show a "
+                "Completed / Failed / In Progress status. "
+                f"Chip elements found: {chip_count}."
+            )
