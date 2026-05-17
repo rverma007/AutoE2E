@@ -227,17 +227,32 @@ class TestComponentLibrary:
             )
 
         with allure.step("Upload sample XML file"):
-            component_library_page.upload_sample_file(xml_file)
+            uploaded = component_library_page.upload_sample_file(xml_file)
+            allure.attach(
+                f"File input accessible: {uploaded}",
+                name="Upload result",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            if not uploaded:
+                pytest.skip(
+                    "File input not accessible via automation — custom upload picker in use."
+                )
 
         with allure.step("Assert page is in a valid state and upload was acknowledged"):
             assert component_library_page.is_loaded(timeout=10_000), (
                 "Component Library page lost loaded state after upload."
             )
             rows_after = component_library_page.row_count()
+            success_banner = component_library_page.page.locator(
+                "[role='alert'], [class*='snackbar'], [class*='toast'], [class*='success']"
+            ).first
+            success_visible = component_library_page.is_visible(success_banner, timeout=5_000)
             allure.attach(
+                f"Success feedback visible: {success_visible}\n"
                 f"Rows before: {rows_before}\nRows after: {rows_after}",
-                name="Post-upload row count",
+                name="Post-upload state",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            # Sample file upload updates preview data, not the component list itself.
-            # Row count is logged above for diagnostics; the authoritative check is is_loaded().
+            assert success_visible or rows_after >= rows_before, (
+                "No success feedback and row count decreased after sample file upload."
+            )

@@ -129,6 +129,16 @@ class TestLetterTypeEditor:
                 "Unexpected navigation away from letter-type context."
             )
 
+        with allure.step("Assert no backend error appeared after generation"):
+            error_loc = authed_page.locator(
+                "text=/unexpected error/i, "
+                "text=/validation error/i, "
+                "text=/Field required/i"
+            ).first
+            assert not editor.is_visible(error_loc, timeout=3_000), (
+                "Backend error appeared after Generate Test Letter in the editor."
+            )
+
     @allure.story("Reset Feature")
     @allure.title("[TC_SM_020] Reset feature reverts editor content")
     @allure.severity(allure.severity_level.CRITICAL)
@@ -319,4 +329,13 @@ class TestLetterTypeEditor:
             )
             assert "letter-type" in authed_page.url, (
                 "Unexpected navigation after Submit for Approval."
+            )
+
+        with allure.step("Assert no error appeared after submission"):
+            error_loc = authed_page.locator(
+                "text=/unexpected error/i, "
+                "text=/validation error/i"
+            ).first
+            assert not editor.is_visible(error_loc, timeout=3_000), (
+                "Error banner visible after Submit for Approval."
             )

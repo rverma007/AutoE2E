@@ -193,6 +193,11 @@ class TestLetterTypeDetails:
                 "Unexpected navigation away from letter-type context after generation."
             )
 
+        with allure.step("Assert generation completed without backend errors"):
+            assert not details.has_backend_error(), (
+                "Backend error / validation error visible after test letter generation."
+            )
+
     @allure.story("Validation Summary")
     @allure.title("[TC_SM_017] Validation Summary executes successfully")
     @allure.severity(allure.severity_level.NORMAL)
@@ -233,4 +238,18 @@ class TestLetterTypeDetails:
         with allure.step("Assert page is still loaded after clicking Validation Summary"):
             assert details.is_loaded(timeout=10_000), (
                 "Page failed to recover after Validation Summary click."
+            )
+
+        with allure.step("Assert Validation Summary tab panel content is rendered"):
+            tab_panel = authed_page.locator(
+                "[role='tabpanel'], [class*='tabpanel'], [class*='tab-content']"
+            ).first
+            panel_visible = details.is_visible(tab_panel, timeout=8_000)
+            allure.attach(
+                f"Tab panel visible: {panel_visible}",
+                name="Validation Summary panel",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            assert panel_visible, (
+                "Validation Summary tab panel did not render after clicking the tab."
             )

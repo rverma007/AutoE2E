@@ -142,18 +142,26 @@ class TestAuditLogger:
                 date_to="2026-05-06",
             )
 
-        with allure.step("Assert filter applied without error"):
+        with allure.step("Assert filter returned valid results"):
             filtered_count = audit_logger_page.row_count()
+            filtered_total = audit_logger_page.total_records()
             allure.attach(
-                f"Filtered rows: {filtered_count}",
+                f"Unfiltered rows  : {unfiltered}\n"
+                f"Filtered rows    : {filtered_count}\n"
+                f"Filtered total   : {filtered_total}",
                 name="Post-filter count",
                 attachment_type=allure.attachment_type.TEXT,
             )
             assert audit_logger_page.is_loaded(timeout=10_000), (
                 "Audit Logger lost loaded state after applying filter."
             )
+            if filtered_total is not None:
+                assert filtered_count <= filtered_total, (
+                    f"Visible rows ({filtered_count}) exceed the footer total ({filtered_total}) "
+                    "after applying the date filter — pagination state is inconsistent."
+                )
             allure.attach(
-                f"Filter applied successfully. Rows returned: {filtered_count}",
+                f"Date filter applied: {unfiltered} → {filtered_count} visible rows.",
                 name="Filter result",
                 attachment_type=allure.attachment_type.TEXT,
             )
