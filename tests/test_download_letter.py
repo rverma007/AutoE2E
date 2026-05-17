@@ -20,15 +20,48 @@ TESTDATA_FILE = os.path.join(TESTDATA_DIR, "ingested_letters.json")
 
 FAIL_ON_DOWNLOAD_ERRORS = os.environ.get("FAIL_ON_DOWNLOAD_ERRORS", "0") == "1"
 
+DOWNLOADED_FILE = os.path.join(TESTDATA_DIR, "downloaded_letters.json")
+
+
+def _save_downloaded_letter(letter_name: str, bu_name: str, pdf_path: str, docx_path: str):
+    """Append a successfully downloaded letter record to downloaded_letters.json."""
+    os.makedirs(TESTDATA_DIR, exist_ok=True)
+    try:
+        with open(DOWNLOADED_FILE, encoding="utf-8") as f:
+            existing = json.load(f)
+        if not isinstance(existing, list):
+            existing = []
+    except Exception:
+        existing = []
+    key = (letter_name.strip(), bu_name.strip())
+    for rec in existing:
+        if (rec["letter_name"].strip(), rec["bu_name"].strip()) == key:
+            rec["pdf_path"] = pdf_path
+            rec["docx_path"] = docx_path
+            break
+    else:
+        existing.append({
+            "letter_name": letter_name,
+            "bu_name": bu_name,
+            "pdf_path": pdf_path,
+            "docx_path": docx_path,
+        })
+    with open(DOWNLOADED_FILE, "w", encoding="utf-8") as f:
+        json.dump(existing, f, indent=2)
+    print(f"📌 Saved to downloaded_letters.json: '{letter_name}' | BU: {bu_name}")
+
 
 @pytest.fixture(scope="module", autouse=True)
 def _clean_download_dir_before_run():
-    """Wipe pdf_docx_downloads folder before the download module runs so each run starts fresh."""
+    """Wipe pdf_docx_downloads folder and downloaded_letters.json before the module runs."""
     import shutil
     folder = os.path.join(DEFAULT_DOWNLOAD_ROOT, "pdf_docx_downloads")
     if os.path.isdir(folder):
         shutil.rmtree(folder)
     os.makedirs(folder, exist_ok=True)
+    os.makedirs(TESTDATA_DIR, exist_ok=True)
+    with open(DOWNLOADED_FILE, "w", encoding="utf-8") as f:
+        json.dump([], f)
     yield
 
 
@@ -1816,18 +1849,17 @@ def _run_download_for_bu(page, bu_type: str):
             # Download PDF
             print("   ⬇️  Downloading PDF…")
             _open_menu_and_wait()
-            _download_format(
-                pdf_menu_item, "PDF",
-                os.path.join(download_dir, f"{safe_name}_{safe_bu}.pdf")
-            )
+            pdf_file = os.path.join(download_dir, f"{safe_name}_{safe_bu}.pdf")
+            _download_format(pdf_menu_item, "PDF", pdf_file)
 
             # Download DOCX from the SAME page (re-open menu)
             print("   ⬇️  Downloading DOCX…")
             _open_menu_and_wait()
-            _download_format(
-                docx_menu_item, "DOCX",
-                os.path.join(download_dir, f"{safe_name}_{safe_bu}.docx")
-            )
+            docx_file = os.path.join(download_dir, f"{safe_name}_{safe_bu}.docx")
+            _download_format(docx_menu_item, "DOCX", docx_file)
+
+            # Record both paths to downloaded_letters.json
+            _save_downloaded_letter(letter_name, bu, pdf_file, docx_file)
 
             # Go back to listing only after both downloads are done
             arrow = _find_back_arrow(page)
