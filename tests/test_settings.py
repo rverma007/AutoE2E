@@ -194,11 +194,12 @@ class TestSettings:
             missing_toggles: list[str] = []
 
             for label, loc in toggles.items():
-                visible = settings_page.is_visible(loc, timeout=6_000)
-                if visible:
+                # MUI switch inputs are CSS-hidden — use count() not is_visible()
+                found = loc.count() > 0
+                if found:
                     toggle_states[label] = settings_page.is_toggle_checked(loc)
                 else:
-                    toggle_states[label] = "NOT VISIBLE"
+                    toggle_states[label] = "NOT FOUND"
                     missing_toggles.append(label)
 
             allure.attach(
@@ -207,7 +208,7 @@ class TestSettings:
                 attachment_type=allure.attachment_type.TEXT,
             )
             assert not missing_toggles, (
-                f"These BU toggles were not visible after selecting the first BU: "
+                f"These BU toggle inputs were not found after selecting the first BU: "
                 f"{missing_toggles}"
             )
 
@@ -258,16 +259,17 @@ class TestSettings:
                 attachment_type=allure.attachment_type.TEXT,
             )
 
-        with allure.step("Assert Auto Correct Address (Letter) toggle is accessible"):
+        with allure.step("Assert Auto Correct Address (Letter) toggle is present"):
             toggle = settings_page.auto_correct_address_letter_toggle
-            toggle_visible = settings_page.is_visible(toggle, timeout=8_000)
+            # MUI switch inputs are CSS-hidden — use count() not is_visible()
+            toggle_found = toggle.count() > 0
             allure.attach(
-                f"Toggle visible: {toggle_visible}",
-                name="Toggle accessibility",
+                f"Toggle input elements found: {toggle_found}",
+                name="Toggle presence",
                 attachment_type=allure.attachment_type.TEXT,
             )
-            assert toggle_visible, (
-                "Auto Correct Address (Letter) toggle not visible — cannot proceed."
+            assert toggle_found, (
+                "Auto Correct Address (Letter) toggle input not found — cannot proceed."
             )
 
         with allure.step("Read and record initial toggle state"):

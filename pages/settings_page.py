@@ -103,26 +103,21 @@ class SettingsPage(BasePage):
     # ── BU Config — right panel (detail fields) ───────────────────────────────
 
     def _toggle_for_label(self, label_text: str):
-        """Return the toggle input/switch next to a given label text.
+        """Return the hidden checkbox input for the MUI Switch near label_text.
 
-        Tries progressively wider ancestor levels to handle MUI's
-        FormControlLabel → Switch → input nesting.
+        MUI Switch inputs are always CSS-hidden (opacity:0 / position:absolute)
+        so is_visible() always returns False — use count() > 0 instead.
         """
         text_loc = self.page.locator(f"text={label_text}").first
-        _TOGGLE_SEL = (
-            "input[type='checkbox'], [role='switch'], "
-            "[class*='MuiSwitch'], [class*='toggle'], [class*='Toggle']"
-        )
-        # parent (xpath=..)
-        candidate = text_loc.locator("xpath=..").locator(_TOGGLE_SEL).first
-        if self.is_visible(candidate, timeout=2_000):
-            return candidate
-        # grandparent (xpath=../..)
-        candidate = text_loc.locator("xpath=../..").locator(_TOGGLE_SEL).first
-        if self.is_visible(candidate, timeout=2_000):
-            return candidate
-        # great-grandparent (xpath=../../..)
-        return text_loc.locator("xpath=../../..").locator(_TOGGLE_SEL).first
+        for xpath in ("xpath=..", "xpath=../..", "xpath=../../..", "xpath=../../../.."):
+            try:
+                candidate = text_loc.locator(xpath).locator("input[type='checkbox']").first
+                if candidate.count() > 0:
+                    return candidate
+            except Exception:
+                continue
+        # Final fallback: return grandparent's checkbox
+        return text_loc.locator("xpath=../../..").locator("input[type='checkbox']").first
 
     @property
     def auto_correct_address_letter_toggle(self):
@@ -205,28 +200,43 @@ class SettingsPage(BasePage):
         return self.is_visible(self._success_toast, timeout=8_000)
 
     def is_toggle_checked(self, toggle_locator) -> bool:
-        """Return True if the toggle is currently ON."""
+        """Return True if the MUI Switch is currently ON.
+
+        toggle_locator must be the input[type='checkbox'] element.
+        Reads .checked via JS (works even when the input is CSS-hidden).
+        """
         try:
-            el = toggle_locator
-            # Try input[type=checkbox] checked property
-            checked = el.evaluate("el => el.checked")
+            checked = toggle_locator.evaluate("el => el.checked")
             if isinstance(checked, bool):
                 return checked
         except Exception:
             pass
         try:
-            # MUI Switch: aria-checked on the root span
-            return toggle_locator.get_attribute("aria-checked") == "true"
+            # Fallback: aria-checked on the switchBase parent
+            aria = toggle_locator.locator("xpath=..").get_attribute("aria-checked")
+            if aria is not None:
+                return aria == "true"
         except Exception:
-            return False
+            pass
+        return False
 
     def click_toggle(self, toggle_locator, label: str = "toggle") -> None:
-        """Click a toggle switch, using force if needed."""
+        """Click the visible MUI Switch element.
+
+        toggle_locator is the hidden input[type='checkbox'].
+        We click its parent span (MuiSwitch-switchBase) which IS visible
+        and fires React's onChange. Clicking the hidden input directly does not.
+        """
         try:
-            toggle_locator.click(timeout=5_000)
+            # Parent of the hidden input = MuiSwitch-switchBase (the interactive span)
+            toggle_locator.locator("xpath=..").click(timeout=5_000)
         except Exception:
-            toggle_locator.click(force=True, timeout=5_000)
-        self.page.wait_for_timeout(500)
+            try:
+                # Grandparent = MuiSwitch-root
+                toggle_locator.locator("xpath=../..").click(timeout=5_000)
+            except Exception:
+                toggle_locator.click(force=True, timeout=5_000)
+        self.page.wait_for_timeout(800)
 
     def select_first_bu(self) -> str:
         """Click the first BU in the left panel list. Returns the BU name."""
