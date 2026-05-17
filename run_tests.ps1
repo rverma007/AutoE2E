@@ -27,6 +27,17 @@ $chainIgnore = $chain | ForEach-Object { "--ignore=$_" }
 $stage1Failed = $false
 $stage2Failed = $false
 
+Write-Host ""
+Write-Host "========================================" -ForegroundColor DarkCyan
+Write-Host "  HOW TO RUN" -ForegroundColor DarkCyan
+Write-Host "========================================" -ForegroundColor DarkCyan
+Write-Host "  .\run_tests.ps1              - Run ALL tests (Stage 1 + Stage 2)"
+Write-Host "  .\run_tests.ps1 -Stage 1    - Run Stage 1 only  (ingestion -> download -> generate -> detail_verify)"
+Write-Host "  .\run_tests.ps1 -Stage 2    - Run Stage 2 only  (all other modules in parallel)"
+Write-Host "  .\run_tests.ps1 -Workers 2  - Change parallel worker count (default: 4)"
+Write-Host "========================================" -ForegroundColor DarkCyan
+Write-Host ""
+
 if ($Stage -eq "1" -or $Stage -eq "all") {
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Cyan
