@@ -2,13 +2,18 @@
 """
 TC_LT_ING_001 — Letter Type Ingestion (UM + ANG)
 
-Reads test_docx/Ingestion.xlsx, which has two data rows:
-  • BU=UM  → DOCX from test_docx/UM/
-  • BU=ANG → DOCX from test_docx/Ang/
+Reads Ingestion.xlsx, which has one data row per BU category:
+  • BU=UM  → DOCX from test_docx/UM/   (BU label "Jasw UM")
+  • BU=ANG → DOCX from test_docx/ANG/  (BU label "Jasw ANG")
+  • BU=PNG → DOCX from test_docx/PNG/  (BU label "Jasw EOB & HICS")
+
+The `BU` column is the category/folder name; the `bu_dropdown` column holds
+the exact Business Unit label to pick in the live Configure dropdown.
 
 For each row:
   1. Opens the Configure Letter Type modal.
-  2. Selects the Business Unit.
+  2. Opens the BU dropdown, enumerates ALL options, and selects the one
+     matching the row's `bu_dropdown` label (exact match, no fuzzy guessing).
   3. Uploads the BU-specific DOCX (triggers the form fields).
   4. Fills Letter Type Name and External ID — each gets a 3-char
      random suffix to guarantee uniqueness across runs.
@@ -226,42 +231,79 @@ def _open_modal(page: Page) -> None:
     raise TimeoutError("Configure Letter Type panel did not open after 3 attempts.")
 
 
-def _select_bu(page: Page, bu: str) -> None:
-    """Select the Business Unit from the MUI dropdown.
+def _select_bu(page: Page, bu_label: str) -> list[str]:
+    """Open the Business Unit dropdown, enumerate ALL options, then select the
+    one matching `bu_label`.
 
-    Match priority:
-      1. Exact text match
-      2. First option whose text contains bu anywhere (case-insensitive)
+    `bu_label` is the exact live UI label (from the Ingestion.xlsx
+    `bu_dropdown` column, e.g. "Jasw ANG") — NOT the category/folder name.
+
+    Selection priority:
+      1. Exact text match (case-insensitive, whitespace-normalised).
+      2. Unambiguous substring — exactly ONE option contains bu_label.
+
+    If no unambiguous match is found the dropdown is closed and a RuntimeError
+    is raised listing every available option, so a wrong/renamed BU fails
+    loudly instead of silently picking the first hit (the previous bug).
+
+    Returns the list of all option texts found, for logging / Allure.
     """
+    def _norm(s: str) -> str:
+        return " ".join((s or "").split()).strip()
+
     sel = page.locator("#mui-component-select-businessUnitDropdown")
     sel.wait_for(state="visible", timeout=12_000)
     sel.click()
     listbox = page.locator("ul[role='listbox']")
     listbox.wait_for(state="visible", timeout=8_000)
 
-    # 1. Exact match
-    exact = listbox.locator(f"li:text-is('{bu}')").first
-    if exact.count() and exact.is_visible(timeout=2_000):
-        exact.click()
-        _close_mui_popover(page)
-        page.wait_for_timeout(400)
-        return
-
-    # 2. First option containing bu anywhere in its text
-    bu_lower = bu.strip().lower()
+    # ── Enumerate every option currently in the dropdown ─────────────────────
     items = listbox.locator("li[role='option'], li").all()
+    options: list[tuple[str, object]] = []  # (normalised_text, locator)
     for item in items:
         try:
-            text = (item.inner_text(timeout=500) or "").strip().lower()
-            if bu_lower in text and item.is_visible(timeout=300):
-                item.click()
-                _close_mui_popover(page)
-                page.wait_for_timeout(400)
-                return
+            txt = _norm(item.inner_text(timeout=800))
+            if txt:
+                options.append((txt, item))
         except Exception:
             pass
 
-    raise RuntimeError(f"BU option containing '{bu}' not found in dropdown")
+    all_texts = [t for t, _ in options]
+    print(f"📋 BU dropdown options ({len(all_texts)}): {all_texts}")
+
+    target = _norm(bu_label)
+    target_l = target.lower()
+
+    # 1. Exact match (case-insensitive)
+    for txt, loc in options:
+        if txt.lower() == target_l:
+            loc.click()
+            _close_mui_popover(page)
+            page.wait_for_timeout(400)
+            return all_texts
+
+    # 2. Unambiguous substring match
+    contains = [(txt, loc) for txt, loc in options if target_l in txt.lower()]
+    if len(contains) == 1:
+        contains[0][1].click()
+        _close_mui_popover(page)
+        page.wait_for_timeout(400)
+        return all_texts
+
+    # No clean match → close the dropdown and fail with diagnostics
+    try:
+        page.keyboard.press("Escape")
+    except Exception:
+        pass
+    _close_mui_popover(page)
+    if len(contains) > 1:
+        raise RuntimeError(
+            f"BU '{bu_label}' is ambiguous — {len(contains)} options match: "
+            f"{[t for t, _ in contains]}. Full list: {all_texts}"
+        )
+    raise RuntimeError(
+        f"BU '{bu_label}' not found in dropdown. Available options: {all_texts}"
+    )
 
 
 def _upload_docx(page: Page, docx_path: str) -> None:
@@ -545,9 +587,10 @@ class TestLetterTypeIngestion:
     @allure.title("[TC_LT_ING_001] Ingest letter type — parameterised by BU")
     @allure.severity(allure.severity_level.CRITICAL)
     @allure.description(
-        "For each row in test_docx/Ingestion.xlsx:\n"
+        "For each row in Ingestion.xlsx:\n"
         "1. Open Configure Letter Type modal.\n"
-        "2. Select the Business Unit from the row's BU column.\n"
+        "2. Enumerate all BU dropdown options; select the one matching the "
+        "row's bu_dropdown label.\n"
         "3. Upload the BU-folder DOCX (triggers form fields).\n"
         "4. Fill Letter Type Name + External ID, each with a unique 3-char suffix.\n"
         "5. Set Region, LOB, Is State Template.\n"
@@ -585,7 +628,8 @@ class TestLetterTypeIngestion:
         if row is None:
             pytest.skip(f"No data row for BU='{bu}' found in {excel_path}")
 
-        bu_raw   = row.get("bu", bu).strip()
+        bu_raw   = row.get("bu", bu).strip()            # category / folder name
+        bu_label = row.get("bu_dropdown", "").strip() or bu_raw  # exact UI label
         sfx      = _suffix()          # unique suffix appended to auto-filled fields
         region   = row.get("region", "")
         lob      = row.get("lob", "")
@@ -597,12 +641,13 @@ class TestLetterTypeIngestion:
         ext_id: str = ""
 
         allure.attach(
-            f"BU         : {bu_raw}\n"
-            f"Suffix     : {sfx}\n"
-            f"Region     : {region}\n"
-            f"LOB        : {lob}\n"
-            f"Is State   : {is_state}\n"
-            f"DOCX       : {docx_p}",
+            f"BU (category) : {bu_raw}\n"
+            f"BU label      : {bu_label}\n"
+            f"Suffix        : {sfx}\n"
+            f"Region        : {region}\n"
+            f"LOB           : {lob}\n"
+            f"Is State      : {is_state}\n"
+            f"DOCX          : {docx_p}",
             name="Ingestion input",
             attachment_type=allure.attachment_type.TEXT,
         )
@@ -641,12 +686,14 @@ class TestLetterTypeIngestion:
         with allure.step("Open 'Configure Letter Type' modal"):
             _open_modal(authed_page)
 
-        # ── 3. Select Business Unit ───────────────────────────────────────────
-        with allure.step(f"Select Business Unit: {bu_raw!r}"):
-            _select_bu(authed_page, bu_raw)
+        # ── 3. Select Business Unit (enumerate dropdown, then exact-match) ─────
+        with allure.step(f"Select Business Unit: {bu_label!r} (category {bu_raw})"):
+            bu_options = _select_bu(authed_page, bu_label)
             allure.attach(
-                f"BU selected: {bu_raw}",
-                name="BU selection",
+                "All BU dropdown options:\n"
+                + "\n".join(f"  - {o}" for o in bu_options)
+                + f"\n\nSelected (category {bu_raw}): {bu_label}",
+                name="BU dropdown options + selection",
                 attachment_type=allure.attachment_type.TEXT,
             )
 

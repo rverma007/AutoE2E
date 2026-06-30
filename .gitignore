@@ -24,6 +24,7 @@ reports/
 screenshots/
 videos/
 traces/
+downloads/
 !reports/.gitkeep
 !screenshots/.gitkeep
 !videos/.gitkeep

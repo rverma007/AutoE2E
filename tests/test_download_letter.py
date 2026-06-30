@@ -1844,14 +1844,12 @@ def _run_download_for_bu(page, bu_type: str):
 
 
 @pytest.mark.sanity
-@pytest.mark.dependency(name="test_download_ang", depends=["test_letter_type_ingestion"])
 def test_download_ang(page):
     """TC_DL_001a: ANG letter — download PDF and DOCX from the same detail page."""
     _run_download_for_bu(page, bu_type="ANG")
 
 
 @pytest.mark.sanity
-@pytest.mark.dependency(name="test_download_bu", depends=["test_letter_type_ingestion"])
 def test_download_bu(page):
     """TC_DL_001b: BU (non-ANG) letter — download PDF and DOCX from the same detail page."""
     _run_download_for_bu(page, bu_type="BU")

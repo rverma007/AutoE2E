@@ -562,7 +562,6 @@ class TestGenerateLetter:
         "6. Click Download Letter and save to downloaded/generated/.\n"
         "7. Assert the generated file is saved and non-empty."
     )
-    @pytest.mark.dependency(name="test_generate_letter", depends=["test_letter_type_ingestion"])
     def test_generate_letter(self, authed_page: Page):
         records = _load_ingested_letters()
         if not records:
@@ -637,7 +636,6 @@ class TestGenerateLetter:
         "3. Assert every ingested letter has an OK entry.\n"
         "4. Assert every generated file still exists on disk and is non-empty."
     )
-    @pytest.mark.dependency(name="test_all_generated", depends=["test_generate_letter"])
     def test_all_bus_generated(self):
         ingested  = _load_ingested_letters()
         generated = _load_generated_letters()

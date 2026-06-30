@@ -17,6 +17,9 @@ class LetterTypePage(BasePage):
 
     PATH = "letter-type"
 
+    # Text of the last toast captured after a Configure upload (success/error).
+    last_upload_toast: str = ""
+
     # --------------------------------------------------------------- Locators
 
     @property
@@ -209,36 +212,157 @@ class LetterTypePage(BasePage):
             if self.text_of(self.table_headers.nth(i)).strip()
         ]
 
-    def configure_letter_type(self, file_path: str) -> "LetterTypePage":
-        """Click Configure Letter Type, then upload the given template file."""
+    def _pick_first_mui_option(self, mui_id: str) -> str:
+        """Open the MUI select #mui_id and click its first non-empty option.
+
+        Returns the selected option text, or '' if it could not be selected.
+        Used for the required Business Unit / Region dropdowns in the Configure
+        panel where the test just needs *a* valid value.
+        """
+        sel = self.page.locator(f"#{mui_id}")
+        if not self.is_visible(sel, timeout=8_000):
+            return ""
+        sel.click()
+        listbox = self.page.locator("ul[role='listbox']")
+        if not self.is_visible(listbox, timeout=6_000):
+            return ""
+        options = listbox.locator("li[role='option'], li")
+        for i in range(options.count()):
+            opt = options.nth(i)
+            try:
+                txt = (opt.inner_text(timeout=800) or "").strip()
+            except Exception:
+                txt = ""
+            if txt:
+                opt.click()
+                self.page.wait_for_timeout(300)
+                return txt
+        try:
+            self.page.keyboard.press("Escape")
+        except Exception:  # noqa: BLE001
+            pass
+        return ""
+
+    def configure_letter_type(self, file_path: str) -> str:
+        """Run the full Configure Letter Type flow and return the created name.
+
+        Steps mirror the real UI: open the panel → select a Business Unit
+        (required) → upload the template (auto-fills Name + External ID) →
+        give the Name a unique suffix (avoids duplicate-name rejection) →
+        select a Region (required) → click Upload File.
+
+        Returns the unique Letter Type Name that was created (searchable in the
+        listing afterwards), or '' if the form could not be completed.
+        """
+        import random
+        import string
+
         self.log.info(f"Configuring letter type with template: {file_path!r}")
         self.safe_click(self.configure_button, "Configure Letter Type")
-
-        # Dismiss popup via JS (no Escape key — avoids closing the configure panel).
         self.dismiss_ask_auto_popup()
 
-        # Wait for the file input to become attached and visible before calling
-        # set_input_files — a hidden <input type="file"> is valid for
-        # set_input_files but the panel must be open for the upload to register.
-        if not self.is_visible(self.upload_input, timeout=10_000):
-            # Try once more — some apps animate the panel open
-            self.page.wait_for_timeout(500)
+        # 1. Business Unit (required) — first available option
+        bu = self._pick_first_mui_option("mui-component-select-businessUnitDropdown")
+        self.log.info(f"Configure: selected Business Unit {bu!r}")
 
+        # 2. Upload the template (the panel must be open for it to register)
+        if not self.is_visible(self.upload_input, timeout=10_000):
+            self.page.wait_for_timeout(500)
         self.upload_input.set_input_files(file_path)
         self.log.info("Template file set on upload input.")
+        self.dismiss_ask_auto_popup()
 
-        # Click Submit / Upload button if it appears
-        if self.is_visible(self.upload_submit_button, timeout=8_000):
+        # 3. Make the Letter Type Name unique to avoid duplicate-name rejection
+        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=4))
+        created_name = ""
+        name_input = self.page.locator(
+            "div.MuiDrawer-paper input[placeholder*='Letter Type Name' i], "
+            "input[placeholder*='Letter Type Name' i]"
+        ).first
+        if self.is_visible(name_input, timeout=10_000):
+            base = (name_input.input_value() or "").strip() or "sample_template"
+            created_name = f"{base}_{suffix}"
+            name_input.click(click_count=3)
+            name_input.fill(created_name)
+
+        # 3b. External ID auto-fills to the same value — it must ALSO be made
+        # unique, otherwise the server rejects the upload as a duplicate
+        # External ID (the template may already exist from a prior run).
+        # NOTE: scope strictly to the drawer — a page-level "External" match
+        # also hits the listing search box ("…Id and External Id"), which sits
+        # behind the drawer backdrop and is un-clickable.
+        ext_input = self.page.locator(
+            "div.MuiDrawer-paper input[placeholder='Enter External Id'], "
+            "div.MuiDrawer-paper input[placeholder='Enter External ID'], "
+            "div.MuiDrawer-paper input[placeholder*='External' i]"
+        ).first
+        if created_name and self.is_visible(ext_input, timeout=4_000):
+            ext_input.click(click_count=3)
+            ext_input.fill(created_name)
+
+        # 4. Region (required) — first available option
+        region = self._pick_first_mui_option("mui-component-select-regionDropdown")
+        self.log.info(f"Configure: selected Region {region!r}")
+
+        # 5. Submit via the 'Upload File' button
+        submit = self.page.locator("button:has-text('Upload File')").last
+        if self.is_visible(submit, timeout=8_000):
+            self.safe_click(submit, "Upload File")
+        elif self.is_visible(self.upload_submit_button, timeout=4_000):
             self.safe_click(self.upload_submit_button, "Upload submit")
         else:
-            self.log.warning("Submit button not found after file set — file may auto-upload.")
+            self.log.warning("Upload File button not found after filling the form.")
 
-        # Wait for the request to complete and the list to refresh
+        # Capture the upload toast (success or error) for diagnostics
+        self.last_upload_toast = self._read_upload_toast(timeout=8_000)
+        self.log.info(f"Configure upload toast: {self.last_upload_toast!r}")
+
+        # Wait for the drawer to close — the reliable signal the upload committed.
+        try:
+            self.page.wait_for_function(
+                "() => { const d = document.querySelector('div.MuiDrawer-paper');"
+                " return !d || getComputedStyle(d).visibility === 'hidden'"
+                "    || getComputedStyle(d).display === 'none'; }",
+                timeout=15_000,
+            )
+        except Exception:  # noqa: BLE001
+            self.log.warning("Configure drawer did not close after Upload File.")
+
         self.wait_for_idle()
-        # Give the server a moment to register the upload before the caller
-        # starts polling status — avoids reading stale "no rows" state.
+        # Give the server a moment to register the upload before polling status
         self.page.wait_for_timeout(1_500)
-        return self
+        return created_name
+
+    def _read_upload_toast(self, timeout: int = 8_000) -> str:
+        """Poll briefly for a snackbar/toast after upload; return its text."""
+        import time as _t
+        deadline = _t.monotonic() + timeout / 1_000
+        while _t.monotonic() < deadline:
+            try:
+                txt = self.page.evaluate(
+                    """() => {
+                        const sels = ['.MuiSnackbar-root','[class*="snackbar" i]',
+                            '[class*="toast" i]','[class*="notification" i]',
+                            'div[role="alert"]','div[role="status"]'];
+                        for (const s of sels) {
+                            for (const el of document.querySelectorAll(s)) {
+                                const st = getComputedStyle(el);
+                                if (st.display==='none' || st.visibility==='hidden') continue;
+                                if (!el.offsetWidth && !el.offsetHeight) continue;
+                                const t = (el.innerText||'').trim();
+                                if (t.length > 5 && !/\\.docx$/i.test(t)
+                                    && !/double curly brace/i.test(t)) return t;
+                            }
+                        }
+                        return null;
+                    }"""
+                )
+                if txt:
+                    return txt
+            except Exception:  # noqa: BLE001
+                pass
+            self.page.wait_for_timeout(250)
+        return ""
 
     def first_row_status(self, timeout: int = 5_000) -> str:
         """Return the status text from the first data row."""
@@ -255,16 +379,20 @@ class LetterTypePage(BasePage):
                 text = self.text_of(loc).strip()
                 if text:
                     return text
-        # Scan every cell in the first row for a known status value
-        _known = {"processing", "draft", "active", "inactive", "published", "error"}
+        # Scan every cell in the first row for a known status keyword
+        _known = (
+            "processing", "draft", "active", "inactive", "published", "error",
+            "approved", "rejected", "submitted for approval", "submitted",
+            "placeholder mismatch", "pipeline error", "archived", "under review",
+        )
         tds = self.page.locator("tbody tr:first-child td")
         for i in range(tds.count()):
             text = self.text_of(tds.nth(i)).strip()
-            if text.lower() in _known:
+            if any(k in text.lower() for k in _known):
                 return text
-        # Last resort: return the full text of the first data row
-        row = self.page.locator("tbody tr:first-child").first
-        return self.text_of(row).strip()
+        # No recognisable status found — return '' rather than the whole row
+        # blob so callers get a clean, assertable signal.
+        return ""
 
     def wait_for_first_row_status_any(
         self, accepted: tuple, timeout: int = 120_000, poll: int = 2_000

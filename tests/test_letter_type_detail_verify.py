@@ -391,7 +391,6 @@ class TestLetterTypeDetailVerify:
         "2. Wait 3 s for the preview panel to render.\n"
         "3. Assert no 'Failed to load PDF' or similar error text is present."
     )
-    @pytest.mark.dependency(name="test_lt_det_002", depends=["test_letter_type_ingestion"])
     def test_pdf_preview_no_error(self, authed_page: Page):
         records = _load_ingested()
         if not records:
@@ -449,7 +448,6 @@ class TestLetterTypeDetailVerify:
         "3. Assert the listing search box is visible.\n"
         "4. Assert 'Configure Letter Type' button is visible."
     )
-    @pytest.mark.dependency(name="test_lt_det_003", depends=["test_letter_type_ingestion"])
     def test_back_navigation(self, authed_page: Page):
         records = _load_ingested()
         if not records:
@@ -518,7 +516,6 @@ class TestLetterTypeDetailVerify:
         "4. If another BU exists in ingested data, apply that BU filter.\n"
         "5. Search for the original letter — assert it does NOT appear (No Data Found)."
     )
-    @pytest.mark.dependency(name="test_lt_filter_001", depends=["test_letter_type_ingestion"])
     def test_bu_filter_scoping(self, authed_page: Page):
         records = _load_ingested()
         if not records:

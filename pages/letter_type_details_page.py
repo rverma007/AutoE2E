@@ -7,6 +7,9 @@ from pages.base_page import BasePage
 class LetterTypeDetailsPage(BasePage):
     PATH = "letter-type"
 
+    # Text of the last success/snackbar toast captured after approve/reject.
+    last_toast: str = ""
+
     @property
     def _page_heading(self):
         return self.page.locator("h1, h2, h3, h4").first
@@ -90,10 +93,23 @@ class LetterTypeDetailsPage(BasePage):
         ).first
 
     @property
-    def confirm_reject_button(self):
-        # Last match picks the confirmatory action, not the opener
+    def confirm_approve_button(self):
+        # The 'Yes' button on the "Approval Confirmation" dialog. Scoped to the
+        # dialog so we never match an unrelated button; .last picks the most
+        # recently opened modal.
         return self.page.locator(
-            "button:has-text('Confirm'), "
+            "[role='dialog'] button:has-text('Yes'), "
+            "[role='dialog'] button:has-text('Confirm'), "
+            "button:has-text('Confirm Approval')"
+        ).last
+
+    @property
+    def confirm_reject_button(self):
+        # The "Leave Feedback" dialog confirms a rejection with a 'Submit'
+        # button (not 'Confirm'). Scope to the dialog and take the last match.
+        return self.page.locator(
+            "[role='dialog'] button:has-text('Submit'), "
+            "[role='dialog'] button:has-text('Confirm'), "
             "button:has-text('Confirm Rejection'), "
             "button:has-text('Submit Rejection')"
         ).last
@@ -182,33 +198,120 @@ class LetterTypeDetailsPage(BasePage):
         ).first
         return self.is_visible(err_loc, timeout=3_000)
 
+    _KNOWN_STATUSES = (
+        "submitted for approval", "pending approval", "approved", "rejected",
+        "submitted", "draft", "processing", "pipeline error", "published",
+        "archived", "under review", "placeholder mismatch",
+    )
+
     def current_status(self) -> str:
-        """Return the status badge/chip text visible on the detail page."""
-        for sel in ("[class*='status']", "[class*='badge']", "[class*='chip']", "[class*='tag']"):
-            loc = self.page.locator(sel).first
+        """Return the letter's status text from the detail panel.
+
+        The detail panel shows a "Status" label followed by a status chip.
+        Earlier this method grabbed the first ``[class*='chip']`` element, which
+        matched a placeholder chip (e.g. ``{MergeDateTime}``) instead of the
+        status. We now:
+          1. Read the element right after the "Status" label.
+          2. Fall back to any chip/badge whose text is a known status keyword.
+        Placeholder chips (containing ``{`` / ``}``) are always ignored.
+        Returns '' when no status is found (e.g. the page navigated away).
+        """
+        # 1. Element immediately following the "Status" label
+        try:
+            loc = self.page.locator(
+                "xpath=//*[normalize-space(.)='Status']/following::*[1]"
+            ).first
             if self.is_visible(loc, timeout=2_000):
                 text = self.text_of(loc).strip()
-                if text:
+                if text and "{" not in text and text.lower() != "status":
                     return text
+        except Exception:
+            pass
+
+        # 2. Any chip/badge/tag whose text matches a known status keyword
+        for sel in ("[class*='status']", "[class*='badge']", "[class*='chip']", "[class*='tag']"):
+            locs = self.page.locator(sel)
+            try:
+                n = min(locs.count(), 20)
+            except Exception:
+                n = 0
+            for i in range(n):
+                try:
+                    t = self.text_of(locs.nth(i)).strip()
+                except Exception:
+                    continue
+                if not t or "{" in t:
+                    continue
+                if any(k in t.lower() for k in self._KNOWN_STATUSES):
+                    return t
+        return ""
+
+    def _read_toast(self, timeout: int = 8_000) -> str:
+        """Poll briefly for a snackbar/toast and return its text (or '')."""
+        import time as _t
+        deadline = _t.monotonic() + timeout / 1_000
+        while _t.monotonic() < deadline:
+            try:
+                txt = self.page.evaluate(
+                    """() => {
+                        const sels = ['.MuiSnackbar-root','[class*="snackbar" i]',
+                            '[class*="toast" i]','[class*="notification" i]',
+                            'div[role="alert"]','div[role="status"]'];
+                        for (const s of sels) {
+                            for (const el of document.querySelectorAll(s)) {
+                                const st = getComputedStyle(el);
+                                if (st.display==='none' || st.visibility==='hidden') continue;
+                                if (!el.offsetWidth && !el.offsetHeight) continue;
+                                const t = (el.innerText||'').trim();
+                                if (t.length > 5 && !/\\.docx$/i.test(t)) return t;
+                            }
+                        }
+                        return null;
+                    }"""
+                )
+                if txt:
+                    self.log.info(f"Toast captured: {txt!r}")
+                    return txt
+            except Exception:
+                pass
+            self.page.wait_for_timeout(250)
         return ""
 
     def click_approve(self) -> bool:
-        """Click Approve. Returns True if the button was found and clicked."""
+        """Click Approve, then confirm 'Yes' on the Approval Confirmation dialog.
+
+        Returns True if the Approve button was found and clicked. The app shows
+        a two-step flow: Approve → "Are you sure…" dialog → Yes.
+        """
         if not self.is_visible(self.approve_button, timeout=8_000):
             return False
+        self.last_toast = ""
         self.safe_click(self.approve_button, "Approve")
         self.wait_for_idle()
+        # Approval Confirmation dialog -> click Yes to commit
+        if self.is_visible(self.confirm_approve_button, timeout=6_000):
+            self.safe_click(self.confirm_approve_button, "Confirm Approval (Yes)")
+            # Capture the success toast immediately — it fades within seconds
+            self.last_toast = self._read_toast(timeout=8_000)
+            self.wait_for_idle()
         return True
 
     def click_reject(self, reason: str = "Automated test rejection") -> bool:
-        """Click Reject, fill reason if a textarea appears, confirm. Returns True if clicked."""
+        """Click Reject, fill the feedback reason, then Submit the dialog.
+
+        Two-step flow: Reject → "Leave Feedback" dialog (reason textarea) →
+        Submit. Returns True if the Reject button was found and clicked.
+        """
         if not self.is_visible(self.reject_button, timeout=8_000):
             return False
+        self.last_toast = ""
         self.safe_click(self.reject_button, "Reject")
         self.wait_for_idle()
         if self.is_visible(self.rejection_reason_input, timeout=5_000):
             self.safe_fill(self.rejection_reason_input, reason, label="rejection reason")
         if self.is_visible(self.confirm_reject_button, timeout=5_000):
-            self.safe_click(self.confirm_reject_button, "Confirm Rejection")
+            self.safe_click(self.confirm_reject_button, "Submit Rejection")
+            # Capture the success toast immediately — it fades within seconds
+            self.last_toast = self._read_toast(timeout=8_000)
             self.wait_for_idle()
         return True

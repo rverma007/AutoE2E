@@ -14,6 +14,8 @@ fixtures) so login is performed only once per session.
 """
 from __future__ import annotations
 
+import os
+
 import allure
 import pytest
 
@@ -21,6 +23,14 @@ from pages.letter_type_page import LetterTypePage
 
 
 pytestmark = pytest.mark.sanity
+
+# A real template WITH {{placeholders}} — the server rejects a placeholder-less
+# .docx, so the minimal generated fixture cannot create a letter. This is the
+# same template the ingestion suite uploads successfully.
+_REAL_TEMPLATE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "test_docx", "UM", "MHCA Approval_ARB.docx",
+)
 
 
 @allure.epic("Correspondence Application")
@@ -87,45 +97,74 @@ class TestLetterTypeConfiguration:
         "The status polling reloads the page every 2 s for up to 60 s."
     )
     def test_configure_letter_type_upload(
-        self, letter_type_page: LetterTypePage, template_file: str
+        self, letter_type_page: LetterTypePage
     ):
+        assert os.path.exists(_REAL_TEMPLATE), (
+            f"Template not found: {_REAL_TEMPLATE}"
+        )
         with allure.step("Navigate to Letter Type listing"):
             letter_type_page.open_direct()
             assert letter_type_page.is_loaded(), "Letter Type page did not load."
 
-        with allure.step("Click 'Configure Letter Type' and upload template"):
-            letter_type_page.configure_letter_type(template_file)
+        with allure.step("Configure Letter Type: select BU + Region, upload template"):
+            created_name = letter_type_page.configure_letter_type(_REAL_TEMPLATE)
+            upload_toast = letter_type_page.last_upload_toast
+            allure.attach(
+                f"Created letter name: {created_name!r}\nUpload toast: {upload_toast!r}",
+                name="Created name + toast",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+            assert created_name, (
+                "Configure flow did not complete — Letter Type Name was never "
+                "filled (BU/Region selection or upload failed)."
+            )
 
-        # These are all valid statuses the server can return after an upload:
-        # Processing / Draft (happy path) or Placeholder Mismatch / Error
-        # (template rejected by the server but upload itself succeeded).
-        _INITIAL_STATES = ("processing", "draft", "placeholder mismatch", "error")
+        # Valid terminal statuses after an upload: Draft (happy path) or
+        # Placeholder Mismatch (template placeholders not in {{ }} format — still
+        # created) / Error / Active.
         _TERMINAL_STATES = ("draft", "placeholder mismatch", "error", "active")
 
-        with allure.step("Verify status reflects a recognised state immediately after upload"):
-            status_after_upload = letter_type_page.first_row_status(timeout=15_000)
-            allure.attach(
-                f"Status after upload: {status_after_upload!r}",
-                name="Initial status",
-                attachment_type=allure.attachment_type.TEXT,
-            )
-            assert any(s in status_after_upload.lower() for s in _INITIAL_STATES), (
-                f"Expected a recognised upload status, got: {status_after_upload!r}"
-            )
+        def _search_and_read_status() -> str:
+            """Re-open the listing, search for the new letter, return its status."""
+            letter_type_page.open_direct()
+            letter_type_page.search(created_name)
+            letter_type_page.page.wait_for_timeout(1_500)
+            return letter_type_page.first_row_status(timeout=8_000)
 
-        with allure.step("Wait for status to reach a terminal state"):
-            reached_terminal = letter_type_page.wait_for_first_row_status_any(
-                _TERMINAL_STATES, timeout=120_000, poll=2_000
-            )
-            final_status = letter_type_page.first_row_status()
+        with allure.step(
+            f"Poll until {created_name!r} appears and reaches a terminal status"
+        ):
+            # A freshly-uploaded letter takes a few seconds to be searchable and
+            # transitions Processing → Draft, so poll (re-searching each round).
+            import time as _t
+            final_status = ""
+            appeared = False
+            reached_terminal = False
+            deadline = _t.monotonic() + 150
+            while _t.monotonic() < deadline:
+                st = _search_and_read_status()
+                if st:
+                    appeared = True
+                    final_status = st
+                    if any(s in st.lower() for s in _TERMINAL_STATES):
+                        reached_terminal = True
+                        break
+                letter_type_page.page.wait_for_timeout(3_000)
             allure.attach(
-                f"Final status: {final_status!r}",
-                name="Final status",
+                f"Created name : {created_name!r}\n"
+                f"Upload toast : {upload_toast!r}\n"
+                f"Appeared     : {appeared}\n"
+                f"Final status : {final_status!r}",
+                name="Upload verification",
                 attachment_type=allure.attachment_type.TEXT,
+            )
+            assert appeared, (
+                f"Letter {created_name!r} never appeared in the listing after "
+                f"upload. Upload toast was: {upload_toast!r}"
             )
             assert reached_terminal, (
-                f"Status did not reach a terminal state within 60 s. "
-                f"Current status: {final_status!r}"
+                f"Status for {created_name!r} did not reach a terminal state "
+                f"within 150 s. Last status: {final_status!r}"
             )
 
 
